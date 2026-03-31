@@ -105,7 +105,7 @@ export default function NewContentPage() {
     setLoading(false);
   };
 
-  const showScheduleWarning = STATUSES_REQUIRING_SCHEDULE.includes(form.status);
+  
 
   return (
     <AppLayout>
