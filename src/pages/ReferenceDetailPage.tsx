@@ -168,11 +168,21 @@ export default function ReferenceDetailPage() {
               {ref.source_name && <><span>·</span><span>{ref.source_name}</span></>}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {analysis && (
-              <Button variant="outline" size="sm" onClick={handleSaveAsPlaybook}>
-                <Lightbulb className="mr-1 h-3 w-3" /> Salvar como Playbook
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => {
+                  // Navigate to new content with reference pre-selected
+                  navigate('/contents/new');
+                  // Store analysis in sessionStorage for pickup
+                  sessionStorage.setItem('referenceAnalysis', JSON.stringify({ refId: ref.id, analysis }));
+                }}>
+                  <FileText className="mr-1 h-3 w-3" /> Usar no Conteúdo
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleSaveAsPlaybook}>
+                  <Lightbulb className="mr-1 h-3 w-3" /> Salvar como Playbook
+                </Button>
+              </>
             )}
             <Button onClick={handleAnalyze} disabled={analyzing} size="sm">
               {analyzing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Brain className="mr-1 h-3 w-3" />}
