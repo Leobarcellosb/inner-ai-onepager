@@ -28,6 +28,7 @@ const menuItems = [
   { title: 'Conteúdos', url: '/contents', icon: FileText },
   { title: 'Calendário', url: '/calendar', icon: CalendarDays },
   { title: 'Briefs', url: '/briefs', icon: PenTool },
+  { title: 'Inteligência', url: '/intelligence', icon: Brain },
 ];
 
 export function AppSidebar() {
