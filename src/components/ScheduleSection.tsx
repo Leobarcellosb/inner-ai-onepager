@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, addDays, nextMonday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarIcon, Clock, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,6 +19,8 @@ interface ScheduleSectionProps {
   currentStatus?: ContentStatus;
 }
 
+const DEFAULT_TIME = '10:00';
+
 export function ScheduleSection({
   scheduledDate,
   scheduledTime,
@@ -34,6 +35,13 @@ export function ScheduleSection({
     currentStatus === 'em_design' ||
     currentStatus === 'aguardando_design'
   );
+
+  const setQuickDate = (date: Date) => {
+    onDateChange(format(date, 'yyyy-MM-dd'));
+    if (!scheduledTime) onTimeChange(DEFAULT_TIME);
+  };
+
+  const today = new Date();
 
   return (
     <div className={cn(
@@ -79,6 +87,20 @@ export function ScheduleSection({
           }
         </div>
       )}
+
+      {/* Quick date buttons */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground mr-1">Rápido:</span>
+        <Button type="button" variant="outline" size="sm" className="h-7 text-xs px-2.5" onClick={() => setQuickDate(today)}>
+          Hoje
+        </Button>
+        <Button type="button" variant="outline" size="sm" className="h-7 text-xs px-2.5" onClick={() => setQuickDate(addDays(today, 1))}>
+          Amanhã
+        </Button>
+        <Button type="button" variant="outline" size="sm" className="h-7 text-xs px-2.5" onClick={() => setQuickDate(nextMonday(today))}>
+          Próx. semana
+        </Button>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
