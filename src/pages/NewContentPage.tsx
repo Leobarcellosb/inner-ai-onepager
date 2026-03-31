@@ -114,19 +114,30 @@ export default function NewContentPage() {
   };
 
   const handleSave = async () => {
+    if (!user?.id) {
+      toast.error('Você precisa estar autenticado para salvar conteúdo.');
+      return;
+    }
     if (!form.title.trim()) {
       toast.error('Título é obrigatório.');
       return;
     }
     setLoading(true);
+
+    // Build clean payload — exclude scheduled_datetime (computed by DB trigger)
+    const { scheduled_datetime, ...rest } = form;
     const { error } = await supabase.from('contents').insert({
-      ...form,
-      created_by: user!.id,
+      ...rest,
+      created_by: user.id,
     });
 
     if (error) {
-      const msg = error.message?.includes('RAISE') ? error.message.replace(/.*RAISE.*: /, '') : error.message;
-      toast.error(msg || 'Erro ao salvar conteúdo.');
+      if (error.message?.includes('row-level security')) {
+        toast.error('Sem permissão para criar conteúdo. Verifique se seu perfil tem uma role atribuída.');
+      } else {
+        const msg = error.message?.includes('RAISE') ? error.message.replace(/.*RAISE.*: /, '') : error.message;
+        toast.error(msg || 'Erro ao salvar conteúdo.');
+      }
     } else {
       toast.success('Conteúdo salvo!');
       navigate('/contents');
