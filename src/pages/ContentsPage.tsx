@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
 import { ContentStatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search } from 'lucide-react';
-import type { Content, ContentStatus, ContentPlatform } from '@/types';
+import { Plus, Search, CalendarIcon, AlertCircle } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import type { Content } from '@/types';
 import { STATUS_LABELS, PLATFORM_LABELS } from '@/types';
 
 export default function ContentsPage() {
@@ -16,6 +19,7 @@ export default function ContentsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
+  const [scheduleFilter, setScheduleFilter] = useState<string>('all');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,7 +30,7 @@ export default function ContentsPage() {
     const { data } = await supabase
       .from('contents')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('scheduled_datetime', { ascending: true, nullsFirst: false });
     if (data) setContents(data as Content[]);
   };
 
@@ -35,7 +39,20 @@ export default function ContentsPage() {
       c.theme.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || c.status === statusFilter;
     const matchPlatform = platformFilter === 'all' || c.platform === platformFilter;
-    return matchSearch && matchStatus && matchPlatform;
+    const matchSchedule = scheduleFilter === 'all' ||
+      (scheduleFilter === 'scheduled' && c.scheduled_datetime) ||
+      (scheduleFilter === 'unscheduled' && !c.scheduled_datetime);
+    return matchSearch && matchStatus && matchPlatform && matchSchedule;
+  });
+
+  // Sort: unscheduled first (warning), then by scheduled_datetime
+  const sorted = [...filtered].sort((a, b) => {
+    if (!a.scheduled_datetime && b.scheduled_datetime) return -1;
+    if (a.scheduled_datetime && !b.scheduled_datetime) return 1;
+    if (a.scheduled_datetime && b.scheduled_datetime) {
+      return a.scheduled_datetime.localeCompare(b.scheduled_datetime);
+    }
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
   return (
@@ -84,6 +101,16 @@ export default function ContentsPage() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={scheduleFilter} onValueChange={setScheduleFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Agendamento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="scheduled">Agendados</SelectItem>
+              <SelectItem value="unscheduled">Sem agendamento</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="glass-card rounded-lg overflow-hidden">
@@ -93,18 +120,19 @@ export default function ContentsPage() {
                 <TableHead>Título</TableHead>
                 <TableHead>Plataforma</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Agendamento</TableHead>
                 <TableHead>Criado em</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {sorted.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     Nenhum conteúdo encontrado
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((c) => (
+                sorted.map((c) => (
                   <TableRow
                     key={c.id}
                     className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -113,6 +141,21 @@ export default function ContentsPage() {
                     <TableCell className="font-medium">{c.title}</TableCell>
                     <TableCell>{PLATFORM_LABELS[c.platform]}</TableCell>
                     <TableCell><ContentStatusBadge status={c.status} /></TableCell>
+                    <TableCell>
+                      {c.scheduled_datetime ? (
+                        <div className="flex items-center gap-1.5">
+                          <CalendarIcon className="h-3.5 w-3.5 text-accent" />
+                          <span className="text-sm">
+                            {format(parseISO(c.scheduled_datetime), "dd/MM · HH:mm")}
+                          </span>
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-[10px]">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Sem data
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {new Date(c.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
