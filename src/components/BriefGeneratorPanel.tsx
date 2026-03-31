@@ -90,19 +90,22 @@ export function BriefGeneratorPanel({
         referenceAnalysis: selectedAnalysis || undefined,
       });
 
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser();
+      console.log('[RLS_DEBUG:briefs] AUTH USER:', authUser, 'AUTH ERROR:', authErr);
       if (!authUser) { toast.error('Usuário não autenticado.'); setLoading(false); return; }
 
-      const { error } = await supabase.from('briefs').insert({
+      const briefPayload = {
         content_id: contentId,
         brief_title: `Brief: ${contentTitle}`,
         ...briefData,
         created_by: authUser.id,
-      });
+      };
+      console.log('[RLS_DEBUG:briefs] INSERT payload:', briefPayload, 'created_by===uid:', briefPayload.created_by === authUser.id);
+      const { error } = await supabase.from('briefs').insert(briefPayload);
 
       if (error) {
+        console.error('[RLS_DEBUG:briefs] INSERT ERROR:', error);
         toast.error('Erro ao salvar brief.');
-        console.error(error);
       } else {
         // Update content status
         await supabase.from('contents').update({ status: 'aguardando_design' as ContentStatus }).eq('id', contentId);

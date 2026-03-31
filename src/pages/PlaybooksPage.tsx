@@ -51,15 +51,20 @@ export default function PlaybooksPage() {
   };
 
   const handleSave = async () => {
-    if (!user || !form.title.trim()) { toast.error('Título obrigatório'); return; }
+    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser();
+    console.log('[RLS_DEBUG:playbooks] AUTH USER:', authUser, 'AUTH ERROR:', authErr);
+    if (!authUser || !form.title.trim()) { toast.error('Título obrigatório ou não autenticado'); return; }
     try {
       if (editing) {
+        console.log('[RLS_DEBUG:playbooks] UPDATE id:', editing.id, 'form:', form);
         const { error } = await supabase.from('playbooks').update(form).eq('id', editing.id);
-        if (error) throw error;
+        if (error) { console.error('[RLS_DEBUG:playbooks] UPDATE ERROR:', error); throw error; }
         toast.success('Playbook atualizado!');
       } else {
-        const { error } = await supabase.from('playbooks').insert({ ...form, created_by: user.id });
-        if (error) throw error;
+        const payload = { ...form, created_by: authUser.id };
+        console.log('[RLS_DEBUG:playbooks] INSERT payload:', payload, 'created_by===uid:', payload.created_by === authUser.id);
+        const { error } = await supabase.from('playbooks').insert(payload);
+        if (error) { console.error('[RLS_DEBUG:playbooks] INSERT ERROR:', error); throw error; }
         toast.success('Playbook criado!');
       }
       setDialogOpen(false);
