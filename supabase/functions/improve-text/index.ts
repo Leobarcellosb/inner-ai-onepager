@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -33,33 +32,52 @@ const INTENSITY_PROMPTS: Record<string, string> = {
   forte: "Reescreva o texto completamente se necessário. Priorize máxima qualidade e impacto.",
 };
 
-serve(async (req) => {
+const VALID_INTENTS = new Set(Object.keys(INTENT_PROMPTS));
+const VALID_INTENSITIES = new Set(Object.keys(INTENSITY_PROMPTS));
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { text, intent, intensity } = await req.json();
+    // Auth validation
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Input validation
+    const body = await req.json();
+    const { text, intent, intensity } = body;
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
-      return new Response(JSON.stringify({ error: "Texto é obrigatório" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ error: "Texto é obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (text.length > 10000) {
+      return new Response(JSON.stringify({ error: "Texto muito longo (máx 10.000 caracteres)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    if (text.length > 10000) {
-      return new Response(JSON.stringify({ error: "Texto muito longo (máx 10.000 caracteres)" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const safeIntent = typeof intent === "string" && VALID_INTENTS.has(intent) ? intent : "clareza";
+    const safeIntensity = typeof intensity === "string" && VALID_INTENSITIES.has(intensity) ? intensity : "media";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Fetch editorial guidelines for brand context
+    // Fetch editorial guidelines
     let editorialContext = "";
     try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceKey);
       const { data: editorial } = await supabase.from("editorial_guidelines").select("*").limit(1).single();
       if (editorial) {
         const parts: string[] = [];
@@ -70,15 +88,12 @@ serve(async (req) => {
         if (editorial.forbidden_terms) parts.push(`Termos proibidos (NUNCA use): ${editorial.forbidden_terms}`);
         if (editorial.cta_patterns) parts.push(`Padrões de CTA: ${editorial.cta_patterns}`);
         if (editorial.creative_principles) parts.push(`Princípios criativos: ${editorial.creative_principles}`);
-        if (parts.length > 0) {
-          editorialContext = `\n\nDIRETRIZES DA MARCA (use como contexto obrigatório):\n${parts.join("\n")}`;
-        }
+        if (parts.length > 0) editorialContext = `\n\nDIRETRIZES DA MARCA (use como contexto obrigatório):\n${parts.join("\n")}`;
       }
-    } catch { /* editorial not configured yet, use defaults */ }
+    } catch { /* not configured yet */ }
 
-    const intentGuide = INTENT_PROMPTS[intent] || INTENT_PROMPTS.clareza;
-    const intensityGuide = INTENSITY_PROMPTS[intensity] || INTENSITY_PROMPTS.media;
-
+    const intentGuide = INTENT_PROMPTS[safeIntent];
+    const intensityGuide = INTENSITY_PROMPTS[safeIntensity];
     const systemPrompt = `${BASE_VOICE}${editorialContext}\n\nINTENÇÃO: ${intentGuide}\nINTENSIDADE: ${intensityGuide}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -96,8 +111,7 @@ serve(async (req) => {
     if (!response.ok) {
       if (response.status === 429) return new Response(JSON.stringify({ error: "Limite de requisições atingido." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       if (response.status === 402) return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("AI gateway error:", response.status);
       return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -109,8 +123,6 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("improve-text error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: "Erro interno" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
