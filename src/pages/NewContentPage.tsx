@@ -85,10 +85,6 @@ export default function NewContentPage() {
       toast.error('Título é obrigatório.');
       return;
     }
-    if (STATUSES_REQUIRING_SCHEDULE.includes(form.status) && (!form.scheduled_date || !form.scheduled_time)) {
-      toast.error('Defina data e horário da postagem antes de concluir este conteúdo.');
-      return;
-    }
     setLoading(true);
     const { error } = await supabase.from('contents').insert({
       ...form,
@@ -96,8 +92,8 @@ export default function NewContentPage() {
     });
 
     if (error) {
-      toast.error('Erro ao salvar conteúdo.');
-      console.error(error);
+      const msg = error.message?.includes('RAISE') ? error.message.replace(/.*RAISE.*: /, '') : error.message;
+      toast.error(msg || 'Erro ao salvar conteúdo.');
     } else {
       toast.success('Conteúdo salvo!');
       navigate('/contents');
