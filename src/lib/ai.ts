@@ -1,15 +1,50 @@
-import { ContentStatus, BriefStatus } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
-export const BRAND_VOICE_PROMPT = `Você é o assistente de comunicação da Inner AI. Reescreva o texto seguindo estas diretrizes:
-- Tom confiante e inteligente
-- Clareza acima de floreio
-- Moderno e direto
-- Sem linguagem engessada
-- Foco em produtividade, inteligência e transformação prática
-- Evitar texto genérico de marketing
-- Parecer uma marca premium e atual
-- Falar de forma útil, objetiva e convincente
-Mantenha a mensagem central, torne o texto mais claro e persuasivo, e sugira um CTA melhor quando fizer sentido.`;
+export type AIIntent = 'clareza' | 'persuasao' | 'engajamento' | 'autoridade' | 'conversao';
+export type AIIntensity = 'leve' | 'media' | 'forte';
+
+export const AI_INTENT_LABELS: Record<AIIntent, string> = {
+  clareza: 'Clareza',
+  persuasao: 'Persuasão',
+  engajamento: 'Engajamento',
+  autoridade: 'Autoridade',
+  conversao: 'Conversão',
+};
+
+export const AI_INTENSITY_LABELS: Record<AIIntensity, string> = {
+  leve: 'Leve',
+  media: 'Média',
+  forte: 'Forte',
+};
+
+export const AI_INTENT_DESCRIPTIONS: Record<AIIntent, string> = {
+  clareza: 'Texto mais claro e bem estruturado',
+  persuasao: 'Mais convincente e motivador',
+  engajamento: 'Envolvente e interativo',
+  autoridade: 'Tom de especialista e confiança',
+  conversao: 'Otimizado para gerar ação',
+};
+
+export async function improveTextWithAI(
+  text: string,
+  intent: AIIntent = 'clareza',
+  intensity: AIIntensity = 'media'
+): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('improve-text', {
+    body: { text, intent, intensity },
+  });
+
+  if (error) {
+    console.error('AI improve error:', error);
+    throw new Error(error.message || 'Erro ao melhorar texto');
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  return data.improved_text;
+}
 
 export const BRIEF_GENERATION_PROMPT = `Você é o assistente criativo da Inner AI. Gere um brief criativo completo e editável com os seguintes campos:
 - Ângulo criativo
@@ -21,13 +56,6 @@ export const BRIEF_GENERATION_PROMPT = `Você é o assistente criativo da Inner 
 - Estrutura sugerida por slides ou cenas
 - CTA
 Baseie-se nas informações fornecidas sobre o conteúdo.`;
-
-// Mock AI functions - ready to be replaced with real API calls
-export async function improveTextWithAI(text: string): Promise<string> {
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  return `${text}\n\n✨ [Versão melhorada pela IA]\n\nEste texto foi refinado para a linguagem Inner AI: tom confiante, direto e orientado a resultados. A mensagem central foi mantida, com ajustes de clareza e persuasão.\n\n💡 CTA sugerido: "Comece agora e transforme seus resultados com inteligência artificial."`;
-}
 
 export async function generateBriefWithAI(params: {
   theme: string;
@@ -48,6 +76,7 @@ export async function generateBriefWithAI(params: {
   copy_summary: string;
   cta: string;
 }> {
+  // Mock for V1 — ready to replace with edge function
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   return {
