@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PenTool, Sparkles } from 'lucide-react';
+import { PenTool, Sparkles, Brain } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateBriefWithAI } from '@/lib/ai';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
@@ -28,6 +28,12 @@ interface BriefGeneratorPanelProps {
   onBriefCreated: () => void;
 }
 
+interface ReferenceForBrief {
+  id: string;
+  title: string;
+  analysis: any;
+}
+
 export function BriefGeneratorPanel({
   open,
   onOpenChange,
@@ -39,6 +45,28 @@ export function BriefGeneratorPanel({
   const [loading, setLoading] = useState(false);
   const [notes, setNotes] = useState('');
   const [form, setForm] = useState(defaults);
+  const [analyzedRefs, setAnalyzedRefs] = useState<ReferenceForBrief[]>([]);
+  const [selectedRefId, setSelectedRefId] = useState<string | null>(null);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.from('references')
+      .select('id, title, reference_analyses(analysis_summary, copy_structure, visual_hierarchy, visual_composition, observed_color_pattern, persuasion_mechanisms, adaptation_for_inner_ai, inspired_generation_prompt)')
+      .eq('analysis_status', 'analisado')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          setAnalyzedRefs(data.map((r: any) => ({ id: r.id, title: r.title, analysis: r.reference_analyses?.[0] })).filter((r: any) => r.analysis));
+        }
+      });
+  }, [open]);
+
+  const handleRefSelect = (refId: string) => {
+    if (refId === 'none') { setSelectedRefId(null); setSelectedAnalysis(null); return; }
+    const ref = analyzedRefs.find(r => r.id === refId);
+    setSelectedRefId(refId);
+    setSelectedAnalysis(ref?.analysis || null);
+  };
 
   const updateForm = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -59,6 +87,7 @@ export function BriefGeneratorPanel({
         targetAudience: form.targetAudience,
         rawText: form.rawText,
         notes,
+        referenceAnalysis: selectedAnalysis || undefined,
       });
 
       const { error } = await supabase.from('briefs').insert({
@@ -97,6 +126,24 @@ export function BriefGeneratorPanel({
         </SheetHeader>
 
         <div className="space-y-4">
+          {analyzedRefs.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-accent/20 bg-accent/5 p-3">
+              <Label className="flex items-center gap-1 text-xs font-medium">
+                <Brain className="h-3 w-3 text-accent" /> Referência analisada (opcional)
+              </Label>
+              <Select value={selectedRefId || 'none'} onValueChange={handleRefSelect}>
+                <SelectTrigger className="text-sm"><SelectValue placeholder="Selecionar referência..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
+                  {analyzedRefs.map(r => <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {selectedAnalysis?.analysis_summary && (
+                <p className="text-[11px] text-muted-foreground line-clamp-2">{selectedAnalysis.analysis_summary}</p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Tema *</Label>
             <Input value={form.theme} onChange={(e) => updateForm('theme', e.target.value)} placeholder="Ex: Produtividade com IA" />

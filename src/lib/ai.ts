@@ -54,6 +54,7 @@ export interface BriefGenerationParams {
   targetAudience: string;
   rawText?: string;
   notes?: string;
+  referenceAnalysis?: Record<string, string>;
 }
 
 export interface BriefGenerationResult {

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
 import { AIImprovePanel } from '@/components/AIImprovePanel';
 import { ScheduleSection } from '@/components/ScheduleSection';
+import { ReferenceSelector } from '@/components/ReferenceSelector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +22,26 @@ export default function NewContentPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [selectedRefId, setSelectedRefId] = useState<string | null>(null);
+
+  // Pick up reference from Intelligence Center navigation
+  useEffect(() => {
+    const stored = sessionStorage.getItem('referenceAnalysis');
+    if (stored) {
+      try {
+        const { refId, analysis } = JSON.parse(stored);
+        setSelectedRefId(refId);
+        if (analysis) {
+          setForm(prev => ({
+            ...prev,
+            objective: analysis.probable_objective || '',
+            target_audience: analysis.probable_audience || '',
+          }));
+        }
+      } catch { /* ignore */ }
+      sessionStorage.removeItem('referenceAnalysis');
+    }
+  }, []);
   const [form, setForm] = useState({
     title: '',
     theme: '',
@@ -80,6 +101,18 @@ export default function NewContentPage() {
     setAiPanelOpen(true);
   };
 
+  const handleReferenceSelect = (refId: string | null, analysis: any) => {
+    setSelectedRefId(refId);
+    if (analysis) {
+      // Pre-fill strategic direction from analysis
+      setForm(prev => ({
+        ...prev,
+        objective: prev.objective || analysis.probable_objective || '',
+        target_audience: prev.target_audience || analysis.probable_audience || '',
+      }));
+    }
+  };
+
   const handleSave = async () => {
     if (!form.title.trim()) {
       toast.error('Título é obrigatório.');
@@ -101,8 +134,6 @@ export default function NewContentPage() {
     setLoading(false);
   };
 
-  
-
   return (
     <AppLayout>
       <div className="max-w-4xl space-y-6 animate-fade-in">
@@ -115,6 +146,9 @@ export default function NewContentPage() {
             <p className="text-sm text-muted-foreground">Crie um novo conteúdo para a marca</p>
           </div>
         </div>
+
+        {/* Reference selector - strategic base */}
+        <ReferenceSelector selectedReferenceId={selectedRefId} onSelect={handleReferenceSelect} />
 
         {/* Schedule section - prominent */}
         <ScheduleSection

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Brain, Loader2, ImageIcon, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Brain, Loader2, ImageIcon, Lightbulb, FileText, PenTool } from 'lucide-react';
 import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
 
@@ -167,11 +168,21 @@ export default function ReferenceDetailPage() {
               {ref.source_name && <><span>·</span><span>{ref.source_name}</span></>}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {analysis && (
-              <Button variant="outline" size="sm" onClick={handleSaveAsPlaybook}>
-                <Lightbulb className="mr-1 h-3 w-3" /> Salvar como Playbook
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => {
+                  // Navigate to new content with reference pre-selected
+                  navigate('/contents/new');
+                  // Store analysis in sessionStorage for pickup
+                  sessionStorage.setItem('referenceAnalysis', JSON.stringify({ refId: ref.id, analysis }));
+                }}>
+                  <FileText className="mr-1 h-3 w-3" /> Usar no Conteúdo
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleSaveAsPlaybook}>
+                  <Lightbulb className="mr-1 h-3 w-3" /> Salvar como Playbook
+                </Button>
+              </>
             )}
             <Button onClick={handleAnalyze} disabled={analyzing} size="sm">
               {analyzing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Brain className="mr-1 h-3 w-3" />}
