@@ -63,18 +63,12 @@ export default function ContentDetailPage() {
 
   const handleSave = async () => {
     if (!content) return;
-
-    // Validate scheduling for terminal statuses
-    if (STATUSES_REQUIRING_SCHEDULE.includes(content.status) && (!content.scheduled_date || !content.scheduled_time)) {
-      toast.error('Defina data e horário da postagem antes de concluir este conteúdo.');
-      return;
-    }
-
     setLoading(true);
     const { id: _id, created_at, created_by, profiles, ...updateData } = content;
     const { error } = await supabase.from('contents').update(updateData).eq('id', content.id);
     if (error) {
-      toast.error('Erro ao salvar.');
+      const msg = error.message?.includes('RAISE') ? error.message.replace(/.*RAISE.*: /, '') : error.message;
+      toast.error(msg || 'Erro ao salvar.');
     } else {
       toast.success('Conteúdo atualizado!');
     }
