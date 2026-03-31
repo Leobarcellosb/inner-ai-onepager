@@ -126,6 +126,24 @@ export function BriefGeneratorPanel({
         </SheetHeader>
 
         <div className="space-y-4">
+          {analyzedRefs.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-accent/20 bg-accent/5 p-3">
+              <Label className="flex items-center gap-1 text-xs font-medium">
+                <Brain className="h-3 w-3 text-accent" /> Referência analisada (opcional)
+              </Label>
+              <Select value={selectedRefId || 'none'} onValueChange={handleRefSelect}>
+                <SelectTrigger className="text-sm"><SelectValue placeholder="Selecionar referência..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
+                  {analyzedRefs.map(r => <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {selectedAnalysis?.analysis_summary && (
+                <p className="text-[11px] text-muted-foreground line-clamp-2">{selectedAnalysis.analysis_summary}</p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Tema *</Label>
             <Input value={form.theme} onChange={(e) => updateForm('theme', e.target.value)} placeholder="Ex: Produtividade com IA" />
