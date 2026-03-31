@@ -44,6 +44,7 @@ const App = () => (
             <Route path="/intelligence/editorial" element={<ProtectedRoute><EditorialPage /></ProtectedRoute>} />
             <Route path="/intelligence/references" element={<ProtectedRoute><ReferencesPage /></ProtectedRoute>} />
             <Route path="/intelligence/references/:id" element={<ProtectedRoute><ReferenceDetailPage /></ProtectedRoute>} />
+            <Route path="/intelligence/ai-analysis" element={<ProtectedRoute><AIAnalysisPage /></ProtectedRoute>} />
             <Route path="/intelligence/playbooks" element={<ProtectedRoute><PlaybooksPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
