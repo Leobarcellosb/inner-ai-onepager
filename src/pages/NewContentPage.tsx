@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
+import { AIImprovePanel } from '@/components/AIImprovePanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Save, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import { improveTextWithAI } from '@/lib/ai';
 import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS } from '@/types';
 import type { ContentPlatform, ContentFormat, ContentStatus } from '@/types';
 
@@ -19,7 +19,7 @@ export default function NewContentPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [form, setForm] = useState({
     title: '',
     theme: '',
@@ -38,20 +38,12 @@ export default function NewContentPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleImproveWithAI = async () => {
+  const handleOpenAIPanel = () => {
     if (!form.raw_text.trim()) {
       toast.error('Escreva um texto base primeiro.');
       return;
     }
-    setAiLoading(true);
-    try {
-      const improved = await improveTextWithAI(form.raw_text);
-      setForm((prev) => ({ ...prev, improved_text: improved }));
-      toast.success('Texto melhorado com IA!');
-    } catch {
-      toast.error('Erro ao melhorar texto.');
-    }
-    setAiLoading(false);
+    setAiPanelOpen(true);
   };
 
   const handleSave = async () => {
@@ -167,13 +159,12 @@ export default function NewContentPage() {
                 />
               </div>
               <Button
-                onClick={handleImproveWithAI}
-                disabled={aiLoading}
+                onClick={handleOpenAIPanel}
                 variant="outline"
                 className="w-full border-accent text-accent hover:bg-accent/10"
               >
-                <Sparkles className={`h-4 w-4 mr-2 ${aiLoading ? 'animate-pulse-soft' : ''}`} />
-                {aiLoading ? 'Melhorando...' : 'Melhorar com IA'}
+                <Sparkles className="h-4 w-4 mr-2" />
+                Melhorar com IA
               </Button>
               {form.improved_text && (
                 <div className="space-y-2">
@@ -197,6 +188,13 @@ export default function NewContentPage() {
           </Button>
         </div>
       </div>
+
+      <AIImprovePanel
+        open={aiPanelOpen}
+        onOpenChange={setAiPanelOpen}
+        originalText={form.raw_text}
+        onAccept={(text) => updateField('improved_text', text)}
+      />
     </AppLayout>
   );
 }
