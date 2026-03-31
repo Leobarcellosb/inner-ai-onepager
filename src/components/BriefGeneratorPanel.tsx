@@ -28,6 +28,12 @@ interface BriefGeneratorPanelProps {
   onBriefCreated: () => void;
 }
 
+interface ReferenceForBrief {
+  id: string;
+  title: string;
+  analysis: any;
+}
+
 export function BriefGeneratorPanel({
   open,
   onOpenChange,
