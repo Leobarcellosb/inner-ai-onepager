@@ -111,8 +111,6 @@ export default function ContentDetailPage() {
     );
   }
 
-  const showScheduleWarning = STATUSES_REQUIRING_SCHEDULE.includes(content.status) ||
-    content.status === 'em_design' || content.status === 'aguardando_design';
 
   return (
     <AppLayout>
@@ -154,7 +152,7 @@ export default function ContentDetailPage() {
           scheduledTime={content.scheduled_time}
           onDateChange={handleScheduleDateChange}
           onTimeChange={handleScheduleTimeChange}
-          showWarning={showScheduleWarning}
+          currentStatus={content.status}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

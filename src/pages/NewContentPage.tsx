@@ -105,7 +105,7 @@ export default function NewContentPage() {
     setLoading(false);
   };
 
-  const showScheduleWarning = STATUSES_REQUIRING_SCHEDULE.includes(form.status);
+  
 
   return (
     <AppLayout>
@@ -126,7 +126,7 @@ export default function NewContentPage() {
           scheduledTime={form.scheduled_time}
           onDateChange={handleScheduleDateChange}
           onTimeChange={handleScheduleTimeChange}
-          showWarning={showScheduleWarning}
+          currentStatus={form.status}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

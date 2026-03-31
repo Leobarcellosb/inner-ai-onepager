@@ -9,13 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
+import { STATUSES_REQUIRING_SCHEDULE } from '@/types';
+import type { ContentStatus } from '@/types';
 
 interface ScheduleSectionProps {
   scheduledDate: string | null;
   scheduledTime: string | null;
   onDateChange: (date: string | null) => void;
   onTimeChange: (time: string | null) => void;
-  showWarning?: boolean;
+  currentStatus?: ContentStatus;
 }
 
 export function ScheduleSection({
@@ -23,15 +25,24 @@ export function ScheduleSection({
   scheduledTime,
   onDateChange,
   onTimeChange,
-  showWarning = false,
+  currentStatus,
 }: ScheduleSectionProps) {
   const selectedDate = scheduledDate ? new Date(scheduledDate + 'T00:00:00') : undefined;
   const isScheduled = scheduledDate && scheduledTime;
+  const needsSchedule = currentStatus && (
+    STATUSES_REQUIRING_SCHEDULE.includes(currentStatus) ||
+    currentStatus === 'em_design' ||
+    currentStatus === 'aguardando_design'
+  );
 
   return (
     <div className={cn(
       "rounded-lg border p-4 space-y-3",
-      isScheduled ? "border-accent/30 bg-accent/5" : showWarning ? "border-warning/50 bg-warning/5" : "border-border"
+      isScheduled
+        ? "border-accent/30 bg-accent/5"
+        : needsSchedule
+          ? "border-destructive/50 bg-destructive/5"
+          : "border-warning/50 bg-warning/5"
     )}>
       <div className="flex items-center justify-between">
         <Label className="text-sm font-display font-semibold flex items-center gap-2">
@@ -40,19 +51,32 @@ export function ScheduleSection({
         </Label>
         {isScheduled ? (
           <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-xs">
-            Agendado
+            ✓ Agendado
           </Badge>
         ) : (
-          <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-xs">
-            Sem agendamento
+          <Badge variant="outline" className={cn(
+            "text-xs",
+            needsSchedule
+              ? "bg-destructive/10 text-destructive border-destructive/30"
+              : "bg-warning/10 text-warning border-warning/30"
+          )}>
+            ⚠ Sem agendamento
           </Badge>
         )}
       </div>
 
-      {showWarning && !isScheduled && (
-        <div className="flex items-center gap-2 text-xs text-warning">
-          <AlertTriangle className="h-3.5 w-3.5" />
-          Defina data e horário antes de concluir este conteúdo.
+      {!isScheduled && (
+        <div className={cn(
+          "flex items-center gap-2 text-xs rounded-md px-3 py-2",
+          needsSchedule
+            ? "text-destructive bg-destructive/10"
+            : "text-warning bg-warning/10"
+        )}>
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          {needsSchedule
+            ? "Este conteúdo precisa de data e horário para avançar no fluxo."
+            : "Defina data e horário da postagem para este conteúdo."
+          }
         </div>
       )}
 
@@ -69,7 +93,7 @@ export function ScheduleSection({
                 )}
               >
                 <CalendarIcon className="h-3.5 w-3.5 mr-2" />
-                {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}
+                {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar data"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
