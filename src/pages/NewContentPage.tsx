@@ -23,6 +23,25 @@ export default function NewContentPage() {
   const [loading, setLoading] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [selectedRefId, setSelectedRefId] = useState<string | null>(null);
+
+  // Pick up reference from Intelligence Center navigation
+  useEffect(() => {
+    const stored = sessionStorage.getItem('referenceAnalysis');
+    if (stored) {
+      try {
+        const { refId, analysis } = JSON.parse(stored);
+        setSelectedRefId(refId);
+        if (analysis) {
+          setForm(prev => ({
+            ...prev,
+            objective: analysis.probable_objective || '',
+            target_audience: analysis.probable_audience || '',
+          }));
+        }
+      } catch { /* ignore */ }
+      sessionStorage.removeItem('referenceAnalysis');
+    }
+  }, []);
   const [form, setForm] = useState({
     title: '',
     theme: '',
