@@ -59,20 +59,22 @@ export default function ReferencesPage() {
   };
 
   const handleCreate = async () => {
-    if (!user || !newRef.title.trim()) { toast.error('Título obrigatório'); return; }
+    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser();
+    console.log('[RLS_DEBUG:references] AUTH USER:', authUser, 'AUTH ERROR:', authErr);
+    if (!authUser || !newRef.title.trim()) { toast.error('Título obrigatório ou não autenticado'); return; }
     setUploading(true);
     try {
       let imageUrl: string | null = null;
       if (imageFile) {
         const ext = imageFile.name.split('.').pop();
-        const path = `${user.id}/${Date.now()}.${ext}`;
+        const path = `${authUser.id}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from('reference-images').upload(path, imageFile);
         if (upErr) throw upErr;
         const { data: urlData } = supabase.storage.from('reference-images').getPublicUrl(path);
         imageUrl = urlData.publicUrl;
       }
       const tagsArr = newRef.tags.split(',').map(t => t.trim()).filter(Boolean);
-      const { error } = await supabase.from('references').insert({
+      const payload = {
         title: newRef.title,
         source_name: newRef.source_name,
         platform: newRef.platform,
@@ -81,10 +83,12 @@ export default function ReferencesPage() {
         observed_hook: newRef.observed_hook,
         reference_image_url: imageUrl,
         tags: tagsArr,
-        uploaded_by: user.id,
-        created_by: user.id,
-      });
-      if (error) throw error;
+        uploaded_by: authUser.id,
+        created_by: authUser.id,
+      };
+      console.log('[RLS_DEBUG:references] INSERT payload:', payload, 'created_by===uid:', payload.created_by === authUser.id);
+      const { error } = await supabase.from('references').insert(payload);
+      if (error) { console.error('[RLS_DEBUG:references] INSERT ERROR:', error); throw error; }
       toast.success('Referência adicionada!');
       setDialogOpen(false);
       setNewRef({ title: '', source_name: '', platform: 'instagram', format: 'post_estatico', caption_or_observed_copy: '', observed_hook: '', tags: '' });
