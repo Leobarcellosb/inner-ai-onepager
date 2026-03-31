@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
+import { AIImprovePanel } from '@/components/AIImprovePanel';
 import { ContentStatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Save, ArrowLeft, PenTool } from 'lucide-react';
 import { toast } from 'sonner';
-import { improveTextWithAI, generateBriefWithAI } from '@/lib/ai';
+import { generateBriefWithAI } from '@/lib/ai';
 import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS } from '@/types';
 import type { Content, ContentPlatform, ContentFormat, ContentStatus } from '@/types';
 
@@ -20,8 +21,8 @@ export default function ContentDetailPage() {
   const navigate = useNavigate();
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
   const [briefLoading, setBriefLoading] = useState(false);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   useEffect(() => {
     if (id) fetchContent();
@@ -49,20 +50,12 @@ export default function ContentDetailPage() {
     setLoading(false);
   };
 
-  const handleImproveWithAI = async () => {
+  const handleOpenAIPanel = () => {
     if (!content?.raw_text?.trim()) {
       toast.error('Escreva um texto base primeiro.');
       return;
     }
-    setAiLoading(true);
-    try {
-      const improved = await improveTextWithAI(content.raw_text);
-      setContent((prev) => prev ? { ...prev, improved_text: improved } : null);
-      toast.success('Texto melhorado!');
-    } catch {
-      toast.error('Erro ao melhorar texto.');
-    }
-    setAiLoading(false);
+    setAiPanelOpen(true);
   };
 
   const handleGenerateBrief = async () => {
@@ -89,7 +82,6 @@ export default function ContentDetailPage() {
         console.error(error);
       } else {
         toast.success('Brief gerado com sucesso!');
-        // Update content status
         await supabase.from('contents').update({ status: 'aguardando_design' }).eq('id', content.id);
         setContent((prev) => prev ? { ...prev, status: 'aguardando_design' as ContentStatus } : null);
       }
@@ -218,13 +210,12 @@ export default function ContentDetailPage() {
                 />
               </div>
               <Button
-                onClick={handleImproveWithAI}
-                disabled={aiLoading}
+                onClick={handleOpenAIPanel}
                 variant="outline"
                 className="w-full border-accent text-accent hover:bg-accent/10"
               >
-                <Sparkles className={`h-4 w-4 mr-2 ${aiLoading ? 'animate-pulse-soft' : ''}`} />
-                {aiLoading ? 'Melhorando...' : 'Melhorar com IA'}
+                <Sparkles className="h-4 w-4 mr-2" />
+                Melhorar com IA
               </Button>
               {content.improved_text && (
                 <div className="space-y-2">
@@ -240,6 +231,13 @@ export default function ContentDetailPage() {
           </Card>
         </div>
       </div>
+
+      <AIImprovePanel
+        open={aiPanelOpen}
+        onOpenChange={setAiPanelOpen}
+        originalText={content.raw_text}
+        onAccept={(text) => updateField('improved_text', text)}
+      />
     </AppLayout>
   );
 }
