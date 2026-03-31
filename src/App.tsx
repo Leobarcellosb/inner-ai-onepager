@@ -10,6 +10,7 @@ import DashboardPage from "./pages/DashboardPage";
 import ContentsPage from "./pages/ContentsPage";
 import NewContentPage from "./pages/NewContentPage";
 import ContentDetailPage from "./pages/ContentDetailPage";
+import CalendarPage from "./pages/CalendarPage";
 import BriefsPage from "./pages/BriefsPage";
 import BriefDetailPage from "./pages/BriefDetailPage";
 import NotFound from "./pages/NotFound";
