@@ -21,6 +21,7 @@ export type Database = {
           content_id: string
           copy_summary: string
           created_at: string
+          created_by: string | null
           creative_angle: string
           cta: string
           designer_notes: string
@@ -40,6 +41,7 @@ export type Database = {
           content_id: string
           copy_summary?: string
           created_at?: string
+          created_by?: string | null
           creative_angle?: string
           cta?: string
           designer_notes?: string
@@ -59,6 +61,7 @@ export type Database = {
           content_id?: string
           copy_summary?: string
           created_at?: string
+          created_by?: string | null
           creative_angle?: string
           cta?: string
           designer_notes?: string
@@ -278,6 +281,7 @@ export type Database = {
           central_promise: string
           copy_structure: string
           created_at: string
+          created_by: string | null
           emotional_angle: string
           execution_checklist: string
           fatigue_risks: string
@@ -308,6 +312,7 @@ export type Database = {
           central_promise?: string
           copy_structure?: string
           created_at?: string
+          created_by?: string | null
           emotional_angle?: string
           execution_checklist?: string
           fatigue_risks?: string
@@ -338,6 +343,7 @@ export type Database = {
           central_promise?: string
           copy_structure?: string
           created_at?: string
+          created_by?: string | null
           emotional_angle?: string
           execution_checklist?: string
           fatigue_risks?: string
@@ -378,6 +384,7 @@ export type Database = {
           audience_guess: string
           caption_or_observed_copy: string
           created_at: string
+          created_by: string | null
           format: string
           id: string
           objective_guess: string
@@ -396,6 +403,7 @@ export type Database = {
           audience_guess?: string
           caption_or_observed_copy?: string
           created_at?: string
+          created_by?: string | null
           format?: string
           id?: string
           objective_guess?: string
@@ -414,6 +422,7 @@ export type Database = {
           audience_guess?: string
           caption_or_observed_copy?: string
           created_at?: string
+          created_by?: string | null
           format?: string
           id?: string
           objective_guess?: string
