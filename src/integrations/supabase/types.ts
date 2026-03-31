@@ -14,16 +14,212 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      briefs: {
+        Row: {
+          brief_title: string
+          campaign_objective: string
+          content_id: string
+          copy_summary: string
+          created_at: string
+          creative_angle: string
+          cta: string
+          designer_notes: string
+          id: string
+          key_message: string
+          mandatory_elements: string
+          status: Database["public"]["Enums"]["brief_status"]
+          suggested_slides_or_scenes: string
+          target_audience: string
+          updated_at: string
+          visual_direction: string
+          visual_references: string
+        }
+        Insert: {
+          brief_title: string
+          campaign_objective?: string
+          content_id: string
+          copy_summary?: string
+          created_at?: string
+          creative_angle?: string
+          cta?: string
+          designer_notes?: string
+          id?: string
+          key_message?: string
+          mandatory_elements?: string
+          status?: Database["public"]["Enums"]["brief_status"]
+          suggested_slides_or_scenes?: string
+          target_audience?: string
+          updated_at?: string
+          visual_direction?: string
+          visual_references?: string
+        }
+        Update: {
+          brief_title?: string
+          campaign_objective?: string
+          content_id?: string
+          copy_summary?: string
+          created_at?: string
+          creative_angle?: string
+          cta?: string
+          designer_notes?: string
+          id?: string
+          key_message?: string
+          mandatory_elements?: string
+          status?: Database["public"]["Enums"]["brief_status"]
+          suggested_slides_or_scenes?: string
+          target_audience?: string
+          updated_at?: string
+          visual_direction?: string
+          visual_references?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "briefs_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "contents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contents: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_by: string
+          cta: string
+          format: Database["public"]["Enums"]["content_format"]
+          funnel_stage: string
+          id: string
+          improved_text: string | null
+          objective: string
+          platform: Database["public"]["Enums"]["content_platform"]
+          raw_text: string
+          status: Database["public"]["Enums"]["content_status"]
+          target_audience: string
+          theme: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by: string
+          cta?: string
+          format?: Database["public"]["Enums"]["content_format"]
+          funnel_stage?: string
+          id?: string
+          improved_text?: string | null
+          objective?: string
+          platform?: Database["public"]["Enums"]["content_platform"]
+          raw_text?: string
+          status?: Database["public"]["Enums"]["content_status"]
+          target_audience?: string
+          theme?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string
+          cta?: string
+          format?: Database["public"]["Enums"]["content_format"]
+          funnel_stage?: string
+          id?: string
+          improved_text?: string | null
+          objective?: string
+          platform?: Database["public"]["Enums"]["content_platform"]
+          raw_text?: string
+          status?: Database["public"]["Enums"]["content_status"]
+          target_audience?: string
+          theme?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          id: string
+          name?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "social_media" | "designer"
+      brief_status: "novo" | "em_andamento" | "em_ajuste" | "finalizado"
+      content_format:
+        | "reels"
+        | "carrossel"
+        | "story"
+        | "post_estatico"
+        | "anuncio"
+        | "email"
+        | "roteiro"
+      content_platform:
+        | "instagram"
+        | "tiktok"
+        | "youtube"
+        | "linkedin"
+        | "whatsapp"
+        | "multiuso"
+      content_status:
+        | "ideia"
+        | "rascunho"
+        | "em_revisao"
+        | "aguardando_design"
+        | "em_design"
+        | "pronto"
+        | "publicado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +346,35 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "social_media", "designer"],
+      brief_status: ["novo", "em_andamento", "em_ajuste", "finalizado"],
+      content_format: [
+        "reels",
+        "carrossel",
+        "story",
+        "post_estatico",
+        "anuncio",
+        "email",
+        "roteiro",
+      ],
+      content_platform: [
+        "instagram",
+        "tiktok",
+        "youtube",
+        "linkedin",
+        "whatsapp",
+        "multiuso",
+      ],
+      content_status: [
+        "ideia",
+        "rascunho",
+        "em_revisao",
+        "aguardando_design",
+        "em_design",
+        "pronto",
+        "publicado",
+      ],
+    },
   },
 } as const
