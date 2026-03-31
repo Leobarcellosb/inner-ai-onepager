@@ -31,12 +31,14 @@ const STATUS_BADGE: Record<string, string> = {
   pendente: 'bg-warning/10 text-warning',
   em_analise: 'bg-info/10 text-info',
   analisado: 'bg-success/10 text-success',
+  erro: 'bg-destructive/10 text-destructive',
 };
 
 const STATUS_LABEL: Record<string, string> = {
   pendente: 'Pendente',
   em_analise: 'Analisando',
   analisado: 'Analisado',
+  erro: 'Erro',
 };
 
 export default function ReferencesPage() {
