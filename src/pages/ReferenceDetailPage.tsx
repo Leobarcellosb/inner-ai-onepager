@@ -122,8 +122,8 @@ export default function ReferenceDetailPage() {
       }
     } catch (e: any) {
       toast.error(e.message || 'Erro na análise');
-      await supabase.from('references').update({ analysis_status: 'pendente' }).eq('id', ref.id);
-      setRef(prev => prev ? { ...prev, analysis_status: 'pendente' } : null);
+      await supabase.from('references').update({ analysis_status: 'erro' }).eq('id', ref.id);
+      setRef(prev => prev ? { ...prev, analysis_status: 'erro' } : null);
     } finally {
       setAnalyzing(false);
     }
