@@ -49,12 +49,12 @@ export default function IntelligenceDashboardPage() {
     },
     {
       title: 'Análises com IA',
-      description: 'Engenharia reversa estratégica de referências',
+      description: 'Envie uma imagem e a IA faz a engenharia reversa completa',
       icon: Brain,
       stat: `${stats.analyzed} analisadas`,
       statColor: 'bg-accent/10 text-accent',
-      path: '/intelligence/references',
-      action: 'Ver análises',
+      path: '/intelligence/ai-analysis',
+      action: 'Analisar',
     },
     {
       title: 'Playbooks',
