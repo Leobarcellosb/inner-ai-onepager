@@ -18,6 +18,7 @@ import EditorialPage from "./pages/EditorialPage";
 import ReferencesPage from "./pages/ReferencesPage";
 import ReferenceDetailPage from "./pages/ReferenceDetailPage";
 import PlaybooksPage from "./pages/PlaybooksPage";
+import AIAnalysisPage from "./pages/AIAnalysisPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
