@@ -87,6 +87,7 @@ export function BriefGeneratorPanel({
         targetAudience: form.targetAudience,
         rawText: form.rawText,
         notes,
+        referenceAnalysis: selectedAnalysis || undefined,
       });
 
       const { error } = await supabase.from('briefs').insert({
