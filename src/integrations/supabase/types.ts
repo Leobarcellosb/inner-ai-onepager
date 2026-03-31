@@ -366,7 +366,7 @@ export type Database = {
           {
             foreignKeyName: "reference_analyses_reference_id_fkey"
             columns: ["reference_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "references"
             referencedColumns: ["id"]
           },
