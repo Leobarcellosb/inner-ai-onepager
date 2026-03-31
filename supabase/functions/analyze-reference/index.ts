@@ -55,54 +55,74 @@ Contexto da marca Inner AI:
     const safeHook = typeof hook === 'string' ? hook.slice(0, 1000) : '';
     const safeSourceName = typeof sourceName === 'string' ? sourceName.slice(0, 500) : '';
 
-    const prompt = `Você é um estrategista de marketing digital e designer sênior. Analise a seguinte referência de conteúdo e gere uma engenharia reversa estratégica completa.
+    const systemPrompt = `Você é um estrategista sênior de marketing digital, copywriter de alta performance e diretor criativo com 15 anos de experiência. Sua função é realizar engenharia reversa estratégica de peças de marketing — não uma descrição superficial, mas uma análise profunda que transforma observação em raciocínio estratégico acionável.
 
-Referência: "${title.slice(0, 500)}"
-Plataforma: ${typeof platform === 'string' ? platform.slice(0, 100) : 'Não informada'}
-Formato: ${typeof format === 'string' ? format.slice(0, 100) : 'Não informado'}
-Fonte: ${safeSourceName || 'Não informada'}
-Copy observada: ${safeCaption || 'Não informada'}
-Hook: ${safeHook || 'Não informado'}
-${typeof imageUrl === 'string' && imageUrl.startsWith('http') ? `Imagem: ${imageUrl.slice(0, 500)}` : ''}
+POSTURA:
+- Analise como um estrategista que precisa reconstruir a lógica por trás da peça
+- Infira a intenção estratégica, não apenas descreva o que está visível
+- Identifique os mecanismos psicológicos e persuasivos em jogo
+- Conecte elementos visuais à estratégia de comunicação
+- Produza inteligência prática que um time criativo possa usar imediatamente
+
+GUARDRAILS:
+- NUNCA oriente clonagem literal de marca, logotipo ou identidade visual proprietária
+- NUNCA instrua a copiar exatamente a peça — sempre converta em direção original e adaptável
+- Foque em estrutura, lógica, composição e direção criativa — não em elementos proprietários
+- Sempre direcione a adaptação para a marca Inner AI de forma autêntica e diferenciada
+
+QUALIDADE:
+- Cada campo deve conter análise estratégica densa e útil, não frases genéricas
+- A saída deve parecer inteligência de alto nível, não relatório descritivo
+- Dê contexto e "porquê" em cada ponto — não apenas "o quê"
+- Prompts gerados devem ser completos e usáveis, não vagos`;
+
+    const prompt = `Analise esta referência de conteúdo e produza uma engenharia reversa estratégica completa.
+
+DADOS DA REFERÊNCIA:
+- Título/nome: "${title.slice(0, 500)}"
+- Plataforma: ${typeof platform === 'string' ? platform.slice(0, 100) : 'Não informada'}
+- Formato: ${typeof format === 'string' ? format.slice(0, 100) : 'Não informado'}
+- Fonte: ${safeSourceName || 'Não informada'}
+${safeCaption ? `- Copy/texto observado: ${safeCaption}` : ''}
+${safeHook ? `- Hook observado: ${safeHook}` : ''}
+${typeof imageUrl === 'string' && imageUrl.startsWith('http') ? `- URL da imagem: ${imageUrl.slice(0, 500)}` : ''}
 ${editorialContext}
 
-IMPORTANTE: Não copie a identidade visual ou marca de terceiros. Foque em estrutura, lógica, composição e direção criativa.
-
-Retorne um JSON com EXATAMENTE estes campos (todos como strings):
+Retorne um JSON com EXATAMENTE estes campos (todos como strings com análise estratégica profunda):
 {
-  "analysis_summary": "Resumo executivo da análise",
-  "piece_type": "Tipo de peça identificado",
-  "probable_objective": "Objetivo provável da peça",
-  "probable_audience": "Público-alvo provável",
-  "main_hook": "Hook/gancho principal",
-  "copy_structure": "Estrutura da copy",
-  "central_promise": "Promessa central feita ao público",
-  "persuasion_mechanisms": "Mecanismos de persuasão utilizados",
-  "emotional_angle": "Ângulo emocional explorado",
-  "rational_angle": "Ângulo racional/lógico explorado",
-  "visual_hierarchy": "Hierarquia visual observada",
-  "observed_color_pattern": "Padrão de cores identificado",
-  "observed_typography_style": "Estilo tipográfico observado",
-  "visual_composition": "Composição visual da peça",
-  "highlight_elements": "Elementos de destaque",
-  "observed_cta": "CTA observado",
-  "why_it_works": "Por que essa peça funciona",
-  "strengths": "Pontos fortes",
-  "weaknesses": "Pontos fracos ou oportunidades de melhoria",
-  "fatigue_risks": "Riscos de saturação se repetido",
-  "adaptation_for_inner_ai": "Como adaptar esse racional para a Inner AI de forma original",
-  "inspired_generation_prompt": "Prompt para gerar nova peça inspirada no racional",
-  "inspired_copy_prompt": "Prompt para gerar copy inspirada no racional",
-  "execution_checklist": "Checklist prático de execução"
+  "analysis_summary": "Resumo executivo da peça — o que ela é, o que faz e por que é relevante como referência",
+  "piece_type": "Tipo de peça identificado e seu papel dentro de uma estratégia de conteúdo",
+  "probable_objective": "O que essa peça está tentando fazer — qual comportamento ou percepção ela busca gerar",
+  "probable_audience": "Qual dor, desejo ou perfil psicográfico essa peça está acionando — vá além de dados demográficos",
+  "main_hook": "Hook principal — o mecanismo de captura de atenção nos primeiros segundos/elementos",
+  "copy_structure": "Estrutura da mensagem: como a narrativa é construída do início ao fim, com qual ritmo e progressão",
+  "central_promise": "Promessa central feita ao público — o que ele ganha se prestar atenção ou agir",
+  "persuasion_mechanisms": "Mecanismos de persuasão utilizados (escassez, prova social, autoridade, reciprocidade, etc.) com exemplos concretos da peça",
+  "emotional_angle": "Ângulo emocional explorado — qual emoção é ativada e como ela se conecta ao objetivo",
+  "rational_angle": "Ângulo racional/lógico — quais argumentos ou dados sustentam a mensagem",
+  "visual_hierarchy": "Hierarquia da informação — o que o olho lê primeiro, segundo, terceiro e por quê",
+  "observed_color_pattern": "Estilo visual observado — paleta, mood, referências estéticas e o efeito psicológico das escolhas",
+  "observed_typography_style": "Tipografia e estilo de texto — peso, contraste, legibilidade e como reforça o tom",
+  "visual_composition": "Leitura visual da composição — layout, equilíbrio, respiração, direção do olhar",
+  "highlight_elements": "Elementos que puxam atenção — ícones, contrastes, movimento, padrões de quebra",
+  "observed_cta": "CTA observado ou implícito — o que o público deve fazer depois e como é comunicado",
+  "why_it_works": "Por que essa peça tende a performar — os 3-5 fatores estratégicos que fazem ela funcionar",
+  "strengths": "Pontos fortes — o que vale preservar como aprendizado e inspiração",
+  "weaknesses": "O que pode estar saturado ou frágil — riscos se a abordagem for repetida sem adaptação",
+  "fatigue_risks": "Riscos de saturação — sinais de que esse formato/abordagem pode estar desgastado no mercado",
+  "adaptation_for_inner_ai": "Como adaptar esse racional para a Inner AI de forma original e autêntica — direção concreta, não genérica",
+  "inspired_generation_prompt": "Prompt completo e detalhado para criar uma peça visual nova inspirada no racional estratégico (não na identidade visual da peça original)",
+  "inspired_copy_prompt": "Prompt completo e detalhado para gerar copy inspirada no racional estratégico, adaptada ao tom Inner AI",
+  "execution_checklist": "Checklist estratégico de execução — 8 a 12 itens práticos e sequenciais para reconstruir uma peça com base nessa análise"
 }`;
 
-    const aiResponse = await fetch('https://api.lovable.dev/v1/chat/completions', {
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${lovableKey}` },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'Você é um estrategista de marketing digital especializado em engenharia reversa de conteúdo. Responda APENAS com JSON válido.' },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt },
         ],
         response_format: { type: 'json_object' },
