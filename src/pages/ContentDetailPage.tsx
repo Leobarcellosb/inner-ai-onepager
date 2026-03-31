@@ -111,8 +111,6 @@ export default function ContentDetailPage() {
     );
   }
 
-  const showScheduleWarning = STATUSES_REQUIRING_SCHEDULE.includes(content.status) ||
-    content.status === 'em_design' || content.status === 'aguardando_design';
 
   return (
     <AppLayout>
