@@ -9,17 +9,33 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    // Auth validation
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } },
+    });
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
-    if (authErr || !user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
+    // Use service role for DB operations
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Input validation
     const body = await req.json();
     const { referenceId, title, platform, format, caption, hook, imageUrl, sourceName } = body;
-    if (!referenceId || !title) return new Response(JSON.stringify({ error: 'referenceId and title required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (!referenceId || typeof referenceId !== 'string') {
+      return new Response(JSON.stringify({ error: 'referenceId is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (!title || typeof title !== 'string') {
+      return new Response(JSON.stringify({ error: 'title is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     // Fetch editorial guidelines for context
     const { data: editorial } = await supabase.from('editorial_guidelines').select('*').limit(1).single();
@@ -31,15 +47,19 @@ Contexto da marca Inner AI:
 - Público-alvo: ${editorial.audience_profiles}
 ` : '';
 
+    const safeCaption = typeof caption === 'string' ? caption.slice(0, 5000) : '';
+    const safeHook = typeof hook === 'string' ? hook.slice(0, 1000) : '';
+    const safeSourceName = typeof sourceName === 'string' ? sourceName.slice(0, 500) : '';
+
     const prompt = `Você é um estrategista de marketing digital e designer sênior. Analise a seguinte referência de conteúdo e gere uma engenharia reversa estratégica completa.
 
-Referência: "${title}"
-Plataforma: ${platform}
-Formato: ${format}
-Fonte: ${sourceName || 'Não informada'}
-Copy observada: ${caption || 'Não informada'}
-Hook: ${hook || 'Não informado'}
-${imageUrl ? `Imagem: ${imageUrl}` : ''}
+Referência: "${title.slice(0, 500)}"
+Plataforma: ${typeof platform === 'string' ? platform.slice(0, 100) : 'Não informada'}
+Formato: ${typeof format === 'string' ? format.slice(0, 100) : 'Não informado'}
+Fonte: ${safeSourceName || 'Não informada'}
+Copy observada: ${safeCaption || 'Não informada'}
+Hook: ${safeHook || 'Não informado'}
+${typeof imageUrl === 'string' && imageUrl.startsWith('http') ? `Imagem: ${imageUrl.slice(0, 500)}` : ''}
 ${editorialContext}
 
 IMPORTANTE: Não copie a identidade visual ou marca de terceiros. Foque em estrutura, lógica, composição e direção criativa.
@@ -51,7 +71,7 @@ Retorne um JSON com EXATAMENTE estes campos (todos como strings):
   "probable_objective": "Objetivo provável da peça",
   "probable_audience": "Público-alvo provável",
   "main_hook": "Hook/gancho principal",
-  "copy_structure": "Estrutura da copy (abertura, desenvolvimento, fechamento)",
+  "copy_structure": "Estrutura da copy",
   "central_promise": "Promessa central feita ao público",
   "persuasion_mechanisms": "Mecanismos de persuasão utilizados",
   "emotional_angle": "Ângulo emocional explorado",
@@ -86,8 +106,9 @@ Retorne um JSON com EXATAMENTE estes campos (todos como strings):
     });
 
     if (!aiResponse.ok) {
-      const errText = await aiResponse.text();
-      throw new Error(`AI error: ${aiResponse.status} ${errText}`);
+      if (aiResponse.status === 429) return new Response(JSON.stringify({ error: 'Limite de requisições atingido.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      if (aiResponse.status === 402) return new Response(JSON.stringify({ error: 'Créditos de IA esgotados.' }), { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      throw new Error(`AI error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
@@ -107,6 +128,7 @@ Retorne um JSON com EXATAMENTE estes campos (todos como strings):
 
     return new Response(JSON.stringify({ analysis: savedAnalysis }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.error('analyze-reference error:', e);
+    return new Response(JSON.stringify({ error: e.message || 'Erro interno' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });

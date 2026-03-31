@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -32,27 +31,51 @@ Responda APENAS com um JSON válido (sem markdown, sem código, sem explicaçõe
   "cta": "call to action principal"
 }`;
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { theme, objective, platform, format, targetAudience, rawText, notes, referenceAnalysis } = await req.json();
+    // Auth validation
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Input validation
+    const body = await req.json();
+    const { theme, objective, platform, format, targetAudience, rawText, notes, referenceAnalysis } = body;
 
     if (!theme || typeof theme !== "string" || theme.trim().length === 0) {
-      return new Response(JSON.stringify({ error: "Tema é obrigatório" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ error: "Tema é obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    const safeTheme = theme.slice(0, 500);
+    const safeObjective = typeof objective === "string" ? objective.slice(0, 500) : "";
+    const safePlatform = typeof platform === "string" ? platform.slice(0, 100) : "";
+    const safeFormat = typeof format === "string" ? format.slice(0, 100) : "";
+    const safeAudience = typeof targetAudience === "string" ? targetAudience.slice(0, 500) : "";
+    const safeRawText = typeof rawText === "string" ? rawText.slice(0, 5000) : "";
+    const safeNotes = typeof notes === "string" ? notes.slice(0, 2000) : "";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Fetch editorial guidelines for brand context
+    // Fetch editorial guidelines
     let editorialContext = "";
     try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceKey);
       const { data: editorial } = await supabase.from("editorial_guidelines").select("*").limit(1).single();
       if (editorial) {
         const parts: string[] = [];
@@ -66,31 +89,29 @@ serve(async (req) => {
 
     // Build reference analysis context
     let referenceContext = "";
-    if (referenceAnalysis) {
+    if (referenceAnalysis && typeof referenceAnalysis === "object") {
       const ra = referenceAnalysis;
       const parts: string[] = [];
-      if (ra.analysis_summary) parts.push(`Resumo: ${ra.analysis_summary}`);
-      if (ra.copy_structure) parts.push(`Estrutura de copy: ${ra.copy_structure}`);
-      if (ra.visual_hierarchy) parts.push(`Hierarquia visual: ${ra.visual_hierarchy}`);
-      if (ra.visual_composition) parts.push(`Composição visual: ${ra.visual_composition}`);
-      if (ra.observed_color_pattern) parts.push(`Cores observadas: ${ra.observed_color_pattern}`);
-      if (ra.persuasion_mechanisms) parts.push(`Mecanismos de persuasão: ${ra.persuasion_mechanisms}`);
-      if (ra.adaptation_for_inner_ai) parts.push(`Adaptação sugerida: ${ra.adaptation_for_inner_ai}`);
-      if (ra.inspired_generation_prompt) parts.push(`Prompt inspirado: ${ra.inspired_generation_prompt}`);
-      if (parts.length > 0) {
-        referenceContext = `\n\nREFERÊNCIA ANALISADA (use como inspiração, NÃO copie — adapte de forma original):\n${parts.join("\n")}`;
-      }
+      if (typeof ra.analysis_summary === "string") parts.push(`Resumo: ${ra.analysis_summary.slice(0, 1000)}`);
+      if (typeof ra.copy_structure === "string") parts.push(`Estrutura de copy: ${ra.copy_structure.slice(0, 1000)}`);
+      if (typeof ra.visual_hierarchy === "string") parts.push(`Hierarquia visual: ${ra.visual_hierarchy.slice(0, 500)}`);
+      if (typeof ra.visual_composition === "string") parts.push(`Composição visual: ${ra.visual_composition.slice(0, 500)}`);
+      if (typeof ra.observed_color_pattern === "string") parts.push(`Cores: ${ra.observed_color_pattern.slice(0, 500)}`);
+      if (typeof ra.persuasion_mechanisms === "string") parts.push(`Persuasão: ${ra.persuasion_mechanisms.slice(0, 500)}`);
+      if (typeof ra.adaptation_for_inner_ai === "string") parts.push(`Adaptação: ${ra.adaptation_for_inner_ai.slice(0, 1000)}`);
+      if (typeof ra.inspired_generation_prompt === "string") parts.push(`Prompt inspirado: ${ra.inspired_generation_prompt.slice(0, 1000)}`);
+      if (parts.length > 0) referenceContext = `\n\nREFERÊNCIA ANALISADA (inspire-se, NÃO copie):\n${parts.join("\n")}`;
     }
 
-    const userPrompt = `Gere um brief criativo completo com base nestas informações:
+    const userPrompt = `Gere um brief criativo completo:
 
-TEMA: ${theme}
-OBJETIVO: ${objective || "Não especificado"}
-PLATAFORMA: ${platform || "Não especificada"}
-FORMATO: ${format || "Não especificado"}
-PÚBLICO-ALVO: ${targetAudience || "Não especificado"}
-${rawText ? `TEXTO BASE / COPY:\n${rawText}` : ""}
-${notes ? `OBSERVAÇÕES ADICIONAIS:\n${notes}` : ""}
+TEMA: ${safeTheme}
+OBJETIVO: ${safeObjective || "Não especificado"}
+PLATAFORMA: ${safePlatform || "Não especificada"}
+FORMATO: ${safeFormat || "Não especificado"}
+PÚBLICO-ALVO: ${safeAudience || "Não especificado"}
+${safeRawText ? `TEXTO BASE:\n${safeRawText}` : ""}
+${safeNotes ? `OBSERVAÇÕES:\n${safeNotes}` : ""}
 ${editorialContext}
 ${referenceContext}
 
@@ -111,8 +132,7 @@ Gere o brief completo em JSON.`;
     if (!response.ok) {
       if (response.status === 429) return new Response(JSON.stringify({ error: "Limite de requisições atingido." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       if (response.status === 402) return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("AI gateway error:", response.status);
       return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -125,9 +145,7 @@ Gere o brief completo em JSON.`;
       briefData = JSON.parse(content);
     } catch {
       console.error("Failed to parse AI response:", content);
-      return new Response(JSON.stringify({ error: "A IA retornou um formato inválido. Tente novamente." }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ error: "A IA retornou um formato inválido. Tente novamente." }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(JSON.stringify({ brief: briefData }), {
@@ -135,8 +153,6 @@ Gere o brief completo em JSON.`;
     });
   } catch (e) {
     console.error("generate-brief error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: "Erro interno" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
