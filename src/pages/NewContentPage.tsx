@@ -114,7 +114,12 @@ export default function NewContentPage() {
   };
 
   const handleSave = async () => {
-    if (!user?.id) {
+    // Debug: verify auth state before insert
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+    console.log("AUTH USER:", authUser);
+    if (userError) console.error("AUTH ERROR:", userError);
+
+    if (!authUser) {
       toast.error('Você precisa estar autenticado para salvar conteúdo.');
       return;
     }
@@ -126,12 +131,17 @@ export default function NewContentPage() {
 
     // Build clean payload — exclude scheduled_datetime (computed by DB trigger)
     const { scheduled_datetime, ...rest } = form;
-    const { error } = await supabase.from('contents').insert({
+    const payload = {
       ...rest,
-      created_by: user.id,
-    });
+      created_by: authUser.id,
+    };
+    console.log("INSERT PAYLOAD:", payload);
+    console.log("created_by === auth.uid?", authUser.id);
+
+    const { error } = await supabase.from('contents').insert(payload);
 
     if (error) {
+      console.error("INSERT ERROR:", error);
       if (error.message?.includes('row-level security')) {
         toast.error('Sem permissão para criar conteúdo. Verifique se seu perfil tem uma role atribuída.');
       } else {
