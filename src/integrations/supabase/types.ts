@@ -94,7 +94,11 @@ export type Database = {
           improved_text: string | null
           objective: string
           platform: Database["public"]["Enums"]["content_platform"]
+          posting_timezone: string
           raw_text: string
+          scheduled_date: string | null
+          scheduled_datetime: string | null
+          scheduled_time: string | null
           status: Database["public"]["Enums"]["content_status"]
           target_audience: string
           theme: string
@@ -112,7 +116,11 @@ export type Database = {
           improved_text?: string | null
           objective?: string
           platform?: Database["public"]["Enums"]["content_platform"]
+          posting_timezone?: string
           raw_text?: string
+          scheduled_date?: string | null
+          scheduled_datetime?: string | null
+          scheduled_time?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           target_audience?: string
           theme?: string
@@ -130,7 +138,11 @@ export type Database = {
           improved_text?: string | null
           objective?: string
           platform?: Database["public"]["Enums"]["content_platform"]
+          posting_timezone?: string
           raw_text?: string
+          scheduled_date?: string | null
+          scheduled_datetime?: string | null
+          scheduled_time?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           target_audience?: string
           theme?: string

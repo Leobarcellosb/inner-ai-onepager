@@ -35,6 +35,10 @@ export interface Content {
   created_by: string;
   created_at: string;
   updated_at: string;
+  scheduled_date: string | null;
+  scheduled_time: string | null;
+  scheduled_datetime: string | null;
+  posting_timezone: string;
   profiles?: Profile;
 }
 
@@ -58,6 +62,9 @@ export interface Brief {
   updated_at: string;
   contents?: Content;
 }
+
+// Statuses that require scheduling
+export const STATUSES_REQUIRING_SCHEDULE: ContentStatus[] = ['pronto', 'publicado'];
 
 export const STATUS_LABELS: Record<ContentStatus, string> = {
   ideia: 'Ideia',

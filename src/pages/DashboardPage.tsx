@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppLayout } from '@/components/AppLayout';
+import { ContentStatusBadge } from '@/components/StatusBadge';
+import { Badge } from '@/components/ui/badge';
 import {
   FileText,
   Eye,
@@ -9,7 +12,13 @@ import {
   PenTool,
   CheckCircle,
   Activity,
+  CalendarDays,
+  AlertCircle,
 } from 'lucide-react';
+import { format, parseISO, isThisWeek } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { PLATFORM_LABELS } from '@/types';
+import type { Content } from '@/types';
 
 interface DashboardStats {
   total: number;
@@ -20,6 +29,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     total: 0,
     emRevisao: 0,
@@ -28,10 +38,14 @@ export default function DashboardPage() {
     prontos: 0,
   });
   const [recentContents, setRecentContents] = useState<any[]>([]);
+  const [upcomingPosts, setUpcomingPosts] = useState<Content[]>([]);
+  const [unscheduledPosts, setUnscheduledPosts] = useState<Content[]>([]);
+  const [thisWeekPosts, setThisWeekPosts] = useState<Content[]>([]);
 
   useEffect(() => {
     fetchStats();
     fetchRecent();
+    fetchScheduling();
   }, []);
 
   const fetchStats = async () => {
@@ -56,6 +70,29 @@ export default function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(5);
     if (data) setRecentContents(data);
+  };
+
+  const fetchScheduling = async () => {
+    const { data: all } = await supabase
+      .from('contents')
+      .select('*')
+      .order('scheduled_datetime', { ascending: true });
+
+    if (!all) return;
+    const contents = all as Content[];
+
+    const now = new Date().toISOString();
+    setUpcomingPosts(
+      contents
+        .filter((c) => c.scheduled_datetime && c.scheduled_datetime >= now)
+        .slice(0, 5)
+    );
+    setUnscheduledPosts(
+      contents.filter((c) => !c.scheduled_datetime && c.status !== 'publicado')
+    );
+    setThisWeekPosts(
+      contents.filter((c) => c.scheduled_datetime && isThisWeek(parseISO(c.scheduled_datetime), { locale: ptBR }))
+    );
   };
 
   const widgets = [
@@ -88,6 +125,113 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Scheduling widgets row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Upcoming posts */}
+          <Card className="glass-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="font-display text-sm flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-accent" />
+                Próximos Posts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {upcomingPosts.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-3">Nenhum post agendado.</p>
+              ) : (
+                <div className="space-y-2">
+                  {upcomingPosts.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between py-1.5 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
+                      onClick={() => navigate(`/contents/${c.id}`)}
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{c.title}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {c.scheduled_datetime && format(parseISO(c.scheduled_datetime), "dd/MM · HH:mm")}
+                          {' · '}{PLATFORM_LABELS[c.platform]}
+                        </div>
+                      </div>
+                      <ContentStatusBadge status={c.status} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Unscheduled */}
+          <Card className={`glass-card ${unscheduledPosts.length > 0 ? 'border-warning/30' : ''}`}>
+            <CardHeader className="pb-2">
+              <CardTitle className="font-display text-sm flex items-center gap-2">
+                <AlertCircle className={`h-4 w-4 ${unscheduledPosts.length > 0 ? 'text-warning' : 'text-muted-foreground'}`} />
+                Sem Agendamento
+                {unscheduledPosts.length > 0 && (
+                  <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/30">
+                    {unscheduledPosts.length}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {unscheduledPosts.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-3">Todos os conteúdos estão agendados! 🎉</p>
+              ) : (
+                <div className="space-y-2">
+                  {unscheduledPosts.slice(0, 5).map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between py-1.5 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
+                      onClick={() => navigate(`/contents/${c.id}`)}
+                    >
+                      <span className="text-sm font-medium truncate">{c.title}</span>
+                      <ContentStatusBadge status={c.status} />
+                    </div>
+                  ))}
+                  {unscheduledPosts.length > 5 && (
+                    <p className="text-[10px] text-muted-foreground">+{unscheduledPosts.length - 5} mais</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* This week */}
+          <Card className="glass-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="font-display text-sm flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-info" />
+                Esta Semana
+                <Badge variant="outline" className="text-[10px]">{thisWeekPosts.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {thisWeekPosts.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-3">Nenhum post esta semana.</p>
+              ) : (
+                <div className="space-y-2">
+                  {thisWeekPosts.slice(0, 5).map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between py-1.5 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
+                      onClick={() => navigate(`/contents/${c.id}`)}
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{c.title}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {c.scheduled_datetime && format(parseISO(c.scheduled_datetime), "EEE dd · HH:mm", { locale: ptBR })}
+                        </div>
+                      </div>
+                      <ContentStatusBadge status={c.status} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="glass-card">

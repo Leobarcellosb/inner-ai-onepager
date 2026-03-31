@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   FileText,
   PenTool,
+  CalendarDays,
   LogOut,
   Sparkles,
 } from 'lucide-react';
@@ -24,6 +25,7 @@ import { Button } from '@/components/ui/button';
 const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Conteúdos', url: '/contents', icon: FileText },
+  { title: 'Calendário', url: '/calendar', icon: CalendarDays },
   { title: 'Briefs', url: '/briefs', icon: PenTool },
 ];
 
