@@ -5,6 +5,7 @@ import {
   FileText,
   PenTool,
   CalendarDays,
+  Brain,
   LogOut,
   Sparkles,
 } from 'lucide-react';
