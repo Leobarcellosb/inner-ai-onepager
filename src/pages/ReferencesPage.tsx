@@ -82,6 +82,7 @@ export default function ReferencesPage() {
         reference_image_url: imageUrl,
         tags: tagsArr,
         uploaded_by: user.id,
+        created_by: user.id,
       });
       if (error) throw error;
       toast.success('Referência adicionada!');
