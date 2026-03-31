@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   FileText,
   PenTool,
+  CalendarDays,
   LogOut,
   Sparkles,
 } from 'lucide-react';
