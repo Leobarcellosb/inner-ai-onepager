@@ -90,10 +90,14 @@ export function BriefGeneratorPanel({
         referenceAnalysis: selectedAnalysis || undefined,
       });
 
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) { toast.error('Usuário não autenticado.'); setLoading(false); return; }
+
       const { error } = await supabase.from('briefs').insert({
         content_id: contentId,
         brief_title: `Brief: ${contentTitle}`,
         ...briefData,
+        created_by: authUser.id,
       });
 
       if (error) {

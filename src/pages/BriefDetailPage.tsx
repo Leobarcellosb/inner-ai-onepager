@@ -60,11 +60,14 @@ export default function BriefDetailPage() {
 
   const handleDuplicate = async () => {
     if (!brief) return;
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) { toast.error('Usuário não autenticado.'); return; }
     const { id: _id, created_at, updated_at, contents, ...briefData } = brief;
     const { data, error } = await supabase.from('briefs').insert({
       ...briefData,
       brief_title: `${brief.brief_title} (cópia)`,
       status: 'novo' as BriefStatus,
+      created_by: authUser.id,
     }).select().single();
     if (error) {
       toast.error('Erro ao duplicar brief.');
