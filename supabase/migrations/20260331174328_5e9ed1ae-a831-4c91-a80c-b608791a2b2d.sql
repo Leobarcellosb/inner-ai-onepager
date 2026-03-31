@@ -1,0 +1,1 @@
+ALTER TABLE public.reference_analyses ADD CONSTRAINT reference_analyses_reference_id_unique UNIQUE (reference_id);

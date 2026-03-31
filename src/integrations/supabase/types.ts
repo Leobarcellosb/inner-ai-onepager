@@ -151,6 +151,102 @@ export type Database = {
         }
         Relationships: []
       }
+      editorial_guidelines: {
+        Row: {
+          audience_profiles: string
+          brand_positioning: string
+          brand_voice: string
+          communication_pillars: string
+          content_pillars: string
+          created_at: string
+          created_by: string
+          creative_principles: string
+          cta_patterns: string
+          examples_of_bad_content: string
+          examples_of_good_content: string
+          forbidden_terms: string
+          id: string
+          preferred_terms: string
+          updated_at: string
+          visual_identity_guidelines: string
+        }
+        Insert: {
+          audience_profiles?: string
+          brand_positioning?: string
+          brand_voice?: string
+          communication_pillars?: string
+          content_pillars?: string
+          created_at?: string
+          created_by: string
+          creative_principles?: string
+          cta_patterns?: string
+          examples_of_bad_content?: string
+          examples_of_good_content?: string
+          forbidden_terms?: string
+          id?: string
+          preferred_terms?: string
+          updated_at?: string
+          visual_identity_guidelines?: string
+        }
+        Update: {
+          audience_profiles?: string
+          brand_positioning?: string
+          brand_voice?: string
+          communication_pillars?: string
+          content_pillars?: string
+          created_at?: string
+          created_by?: string
+          creative_principles?: string
+          cta_patterns?: string
+          examples_of_bad_content?: string
+          examples_of_good_content?: string
+          forbidden_terms?: string
+          id?: string
+          preferred_terms?: string
+          updated_at?: string
+          visual_identity_guidelines?: string
+        }
+        Relationships: []
+      }
+      playbooks: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          examples: string
+          framework: string
+          id: string
+          recommended_use_cases: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by: string
+          examples?: string
+          framework?: string
+          id?: string
+          recommended_use_cases?: string
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          examples?: string
+          framework?: string
+          id?: string
+          recommended_use_cases?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -172,6 +268,164 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      reference_analyses: {
+        Row: {
+          adaptation_for_inner_ai: string
+          analysis_summary: string
+          central_promise: string
+          copy_structure: string
+          created_at: string
+          emotional_angle: string
+          execution_checklist: string
+          fatigue_risks: string
+          highlight_elements: string
+          id: string
+          inspired_copy_prompt: string
+          inspired_generation_prompt: string
+          main_hook: string
+          observed_color_pattern: string
+          observed_cta: string
+          observed_typography_style: string
+          persuasion_mechanisms: string
+          piece_type: string
+          probable_audience: string
+          probable_objective: string
+          rational_angle: string
+          reference_id: string
+          strengths: string
+          updated_at: string
+          visual_composition: string
+          visual_hierarchy: string
+          weaknesses: string
+          why_it_works: string
+        }
+        Insert: {
+          adaptation_for_inner_ai?: string
+          analysis_summary?: string
+          central_promise?: string
+          copy_structure?: string
+          created_at?: string
+          emotional_angle?: string
+          execution_checklist?: string
+          fatigue_risks?: string
+          highlight_elements?: string
+          id?: string
+          inspired_copy_prompt?: string
+          inspired_generation_prompt?: string
+          main_hook?: string
+          observed_color_pattern?: string
+          observed_cta?: string
+          observed_typography_style?: string
+          persuasion_mechanisms?: string
+          piece_type?: string
+          probable_audience?: string
+          probable_objective?: string
+          rational_angle?: string
+          reference_id: string
+          strengths?: string
+          updated_at?: string
+          visual_composition?: string
+          visual_hierarchy?: string
+          weaknesses?: string
+          why_it_works?: string
+        }
+        Update: {
+          adaptation_for_inner_ai?: string
+          analysis_summary?: string
+          central_promise?: string
+          copy_structure?: string
+          created_at?: string
+          emotional_angle?: string
+          execution_checklist?: string
+          fatigue_risks?: string
+          highlight_elements?: string
+          id?: string
+          inspired_copy_prompt?: string
+          inspired_generation_prompt?: string
+          main_hook?: string
+          observed_color_pattern?: string
+          observed_cta?: string
+          observed_typography_style?: string
+          persuasion_mechanisms?: string
+          piece_type?: string
+          probable_audience?: string
+          probable_objective?: string
+          rational_angle?: string
+          reference_id?: string
+          strengths?: string
+          updated_at?: string
+          visual_composition?: string
+          visual_hierarchy?: string
+          weaknesses?: string
+          why_it_works?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reference_analyses_reference_id_fkey"
+            columns: ["reference_id"]
+            isOneToOne: true
+            referencedRelation: "references"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      references: {
+        Row: {
+          analysis_status: Database["public"]["Enums"]["analysis_status"]
+          audience_guess: string
+          caption_or_observed_copy: string
+          created_at: string
+          format: string
+          id: string
+          objective_guess: string
+          observed_hook: string
+          platform: string
+          reference_image_url: string | null
+          source_name: string
+          source_type: string
+          tags: string[]
+          title: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          analysis_status?: Database["public"]["Enums"]["analysis_status"]
+          audience_guess?: string
+          caption_or_observed_copy?: string
+          created_at?: string
+          format?: string
+          id?: string
+          objective_guess?: string
+          observed_hook?: string
+          platform?: string
+          reference_image_url?: string | null
+          source_name?: string
+          source_type?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          analysis_status?: Database["public"]["Enums"]["analysis_status"]
+          audience_guess?: string
+          caption_or_observed_copy?: string
+          created_at?: string
+          format?: string
+          id?: string
+          objective_guess?: string
+          observed_hook?: string
+          platform?: string
+          reference_image_url?: string | null
+          source_name?: string
+          source_type?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
         }
         Relationships: []
       }
@@ -207,6 +461,7 @@ export type Database = {
       }
     }
     Enums: {
+      analysis_status: "pendente" | "em_analise" | "analisado"
       app_role: "admin" | "social_media" | "designer"
       brief_status: "novo" | "em_andamento" | "em_ajuste" | "finalizado"
       content_format:
@@ -359,6 +614,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      analysis_status: ["pendente", "em_analise", "analisado"],
       app_role: ["admin", "social_media", "designer"],
       brief_status: ["novo", "em_andamento", "em_ajuste", "finalizado"],
       content_format: [

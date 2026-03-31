@@ -13,6 +13,11 @@ import ContentDetailPage from "./pages/ContentDetailPage";
 import CalendarPage from "./pages/CalendarPage";
 import BriefsPage from "./pages/BriefsPage";
 import BriefDetailPage from "./pages/BriefDetailPage";
+import IntelligenceDashboardPage from "./pages/IntelligenceDashboardPage";
+import EditorialPage from "./pages/EditorialPage";
+import ReferencesPage from "./pages/ReferencesPage";
+import ReferenceDetailPage from "./pages/ReferenceDetailPage";
+import PlaybooksPage from "./pages/PlaybooksPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +39,11 @@ const App = () => (
             <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
             <Route path="/briefs" element={<ProtectedRoute><BriefsPage /></ProtectedRoute>} />
             <Route path="/briefs/:id" element={<ProtectedRoute><BriefDetailPage /></ProtectedRoute>} />
+            <Route path="/intelligence" element={<ProtectedRoute><IntelligenceDashboardPage /></ProtectedRoute>} />
+            <Route path="/intelligence/editorial" element={<ProtectedRoute><EditorialPage /></ProtectedRoute>} />
+            <Route path="/intelligence/references" element={<ProtectedRoute><ReferencesPage /></ProtectedRoute>} />
+            <Route path="/intelligence/references/:id" element={<ProtectedRoute><ReferenceDetailPage /></ProtectedRoute>} />
+            <Route path="/intelligence/playbooks" element={<ProtectedRoute><PlaybooksPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
