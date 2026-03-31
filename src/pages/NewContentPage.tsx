@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
 import { AIImprovePanel } from '@/components/AIImprovePanel';
+import { ScheduleSection } from '@/components/ScheduleSection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Save, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS } from '@/types';
+import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS, STATUSES_REQUIRING_SCHEDULE } from '@/types';
 import type { ContentPlatform, ContentFormat, ContentStatus } from '@/types';
 
 export default function NewContentPage() {
@@ -32,10 +33,43 @@ export default function NewContentPage() {
     improved_text: '',
     cta: '',
     status: 'rascunho' as ContentStatus,
+    scheduled_date: null as string | null,
+    scheduled_time: null as string | null,
+    scheduled_datetime: null as string | null,
+    posting_timezone: 'America/Sao_Paulo',
   });
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: string, value: string | null) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const computeScheduledDatetime = (date: string | null, time: string | null): string | null => {
+    if (!date || !time) return null;
+    return `${date}T${time}:00`;
+  };
+
+  const handleScheduleDateChange = (date: string | null) => {
+    setForm((prev) => ({
+      ...prev,
+      scheduled_date: date,
+      scheduled_datetime: computeScheduledDatetime(date, prev.scheduled_time),
+    }));
+  };
+
+  const handleScheduleTimeChange = (time: string | null) => {
+    setForm((prev) => ({
+      ...prev,
+      scheduled_time: time,
+      scheduled_datetime: computeScheduledDatetime(prev.scheduled_date, time),
+    }));
+  };
+
+  const handleStatusChange = (newStatus: string) => {
+    if (STATUSES_REQUIRING_SCHEDULE.includes(newStatus as ContentStatus) && (!form.scheduled_date || !form.scheduled_time)) {
+      toast.error('Defina data e horário da postagem antes de alterar para este status.');
+      return;
+    }
+    updateField('status', newStatus);
   };
 
   const handleOpenAIPanel = () => {
@@ -49,6 +83,10 @@ export default function NewContentPage() {
   const handleSave = async () => {
     if (!form.title.trim()) {
       toast.error('Título é obrigatório.');
+      return;
+    }
+    if (STATUSES_REQUIRING_SCHEDULE.includes(form.status) && (!form.scheduled_date || !form.scheduled_time)) {
+      toast.error('Defina data e horário da postagem antes de concluir este conteúdo.');
       return;
     }
     setLoading(true);
@@ -67,6 +105,8 @@ export default function NewContentPage() {
     setLoading(false);
   };
 
+  const showScheduleWarning = STATUSES_REQUIRING_SCHEDULE.includes(form.status);
+
   return (
     <AppLayout>
       <div className="max-w-4xl space-y-6 animate-fade-in">
@@ -79,6 +119,15 @@ export default function NewContentPage() {
             <p className="text-sm text-muted-foreground">Crie um novo conteúdo para a marca</p>
           </div>
         </div>
+
+        {/* Schedule section - prominent */}
+        <ScheduleSection
+          scheduledDate={form.scheduled_date}
+          scheduledTime={form.scheduled_time}
+          onDateChange={handleScheduleDateChange}
+          onTimeChange={handleScheduleTimeChange}
+          showWarning={showScheduleWarning}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="glass-card">
@@ -132,7 +181,7 @@ export default function NewContentPage() {
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => updateField('status', v)}>
+                <Select value={form.status} onValueChange={handleStatusChange}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_LABELS).map(([k, v]) => (

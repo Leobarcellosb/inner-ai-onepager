@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
 import { AIImprovePanel } from '@/components/AIImprovePanel';
 import { BriefGeneratorPanel } from '@/components/BriefGeneratorPanel';
+import { ScheduleSection } from '@/components/ScheduleSection';
 import { ContentStatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Save, ArrowLeft, PenTool } from 'lucide-react';
 import { toast } from 'sonner';
-import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS } from '@/types';
+import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS, STATUSES_REQUIRING_SCHEDULE } from '@/types';
 import type { Content, ContentStatus } from '@/types';
 
 export default function ContentDetailPage() {
@@ -33,12 +34,42 @@ export default function ContentDetailPage() {
     if (data) setContent(data as Content);
   };
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: string, value: string | null) => {
     setContent((prev) => prev ? { ...prev, [field]: value } : null);
+  };
+
+  const computeScheduledDatetime = (date: string | null, time: string | null): string | null => {
+    if (!date || !time) return null;
+    return `${date}T${time}:00`;
+  };
+
+  const handleScheduleDateChange = (date: string | null) => {
+    const time = content?.scheduled_time || null;
+    setContent((prev) => prev ? {
+      ...prev,
+      scheduled_date: date,
+      scheduled_datetime: computeScheduledDatetime(date, time),
+    } : null);
+  };
+
+  const handleScheduleTimeChange = (time: string | null) => {
+    const date = content?.scheduled_date || null;
+    setContent((prev) => prev ? {
+      ...prev,
+      scheduled_time: time,
+      scheduled_datetime: computeScheduledDatetime(date, time),
+    } : null);
   };
 
   const handleSave = async () => {
     if (!content) return;
+
+    // Validate scheduling for terminal statuses
+    if (STATUSES_REQUIRING_SCHEDULE.includes(content.status) && (!content.scheduled_date || !content.scheduled_time)) {
+      toast.error('Defina data e horário da postagem antes de concluir este conteúdo.');
+      return;
+    }
+
     setLoading(true);
     const { id: _id, created_at, created_by, profiles, ...updateData } = content;
     const { error } = await supabase.from('contents').update(updateData).eq('id', content.id);
@@ -58,6 +89,14 @@ export default function ContentDetailPage() {
     setAiPanelOpen(true);
   };
 
+  const handleStatusChange = (newStatus: string) => {
+    if (STATUSES_REQUIRING_SCHEDULE.includes(newStatus as ContentStatus) && (!content?.scheduled_date || !content?.scheduled_time)) {
+      toast.error('Defina data e horário da postagem antes de alterar para este status.');
+      return;
+    }
+    updateField('status', newStatus);
+  };
+
   const handleBriefCreated = () => {
     setContent((prev) => prev ? { ...prev, status: 'aguardando_design' as ContentStatus } : null);
   };
@@ -71,6 +110,9 @@ export default function ContentDetailPage() {
       </AppLayout>
     );
   }
+
+  const showScheduleWarning = STATUSES_REQUIRING_SCHEDULE.includes(content.status) ||
+    content.status === 'em_design' || content.status === 'aguardando_design';
 
   return (
     <AppLayout>
@@ -105,6 +147,15 @@ export default function ContentDetailPage() {
             </Button>
           </div>
         </div>
+
+        {/* Schedule section - prominent */}
+        <ScheduleSection
+          scheduledDate={content.scheduled_date}
+          scheduledTime={content.scheduled_time}
+          onDateChange={handleScheduleDateChange}
+          onTimeChange={handleScheduleTimeChange}
+          showWarning={showScheduleWarning}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="glass-card">
@@ -156,7 +207,7 @@ export default function ContentDetailPage() {
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={content.status} onValueChange={(v) => updateField('status', v)}>
+                <Select value={content.status} onValueChange={handleStatusChange}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_LABELS).map(([k, v]) => (
