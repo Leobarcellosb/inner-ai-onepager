@@ -6,7 +6,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Brain, Loader2, ImageIcon, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Brain, Loader2, ImageIcon, Lightbulb, FileText, PenTool } from 'lucide-react';
 import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
 
