@@ -154,7 +154,7 @@ export default function ContentDetailPage() {
           scheduledTime={content.scheduled_time}
           onDateChange={handleScheduleDateChange}
           onTimeChange={handleScheduleTimeChange}
-          showWarning={showScheduleWarning}
+          currentStatus={content.status}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
