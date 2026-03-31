@@ -13,6 +13,11 @@ import ContentDetailPage from "./pages/ContentDetailPage";
 import CalendarPage from "./pages/CalendarPage";
 import BriefsPage from "./pages/BriefsPage";
 import BriefDetailPage from "./pages/BriefDetailPage";
+import IntelligenceDashboardPage from "./pages/IntelligenceDashboardPage";
+import EditorialPage from "./pages/EditorialPage";
+import ReferencesPage from "./pages/ReferencesPage";
+import ReferenceDetailPage from "./pages/ReferenceDetailPage";
+import PlaybooksPage from "./pages/PlaybooksPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
