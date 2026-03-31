@@ -45,6 +45,28 @@ export function BriefGeneratorPanel({
   const [loading, setLoading] = useState(false);
   const [notes, setNotes] = useState('');
   const [form, setForm] = useState(defaults);
+  const [analyzedRefs, setAnalyzedRefs] = useState<ReferenceForBrief[]>([]);
+  const [selectedRefId, setSelectedRefId] = useState<string | null>(null);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.from('references')
+      .select('id, title, reference_analyses(analysis_summary, copy_structure, visual_hierarchy, visual_composition, observed_color_pattern, persuasion_mechanisms, adaptation_for_inner_ai, inspired_generation_prompt)')
+      .eq('analysis_status', 'analisado')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          setAnalyzedRefs(data.map((r: any) => ({ id: r.id, title: r.title, analysis: r.reference_analyses?.[0] })).filter((r: any) => r.analysis));
+        }
+      });
+  }, [open]);
+
+  const handleRefSelect = (refId: string) => {
+    if (refId === 'none') { setSelectedRefId(null); setSelectedAnalysis(null); return; }
+    const ref = analyzedRefs.find(r => r.id === refId);
+    setSelectedRefId(refId);
+    setSelectedAnalysis(ref?.analysis || null);
+  };
 
   const updateForm = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
