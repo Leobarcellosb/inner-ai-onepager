@@ -461,7 +461,7 @@ export type Database = {
       }
     }
     Enums: {
-      analysis_status: "pendente" | "em_analise" | "analisado"
+      analysis_status: "pendente" | "em_analise" | "analisado" | "erro"
       app_role: "admin" | "social_media" | "designer"
       brief_status: "novo" | "em_andamento" | "em_ajuste" | "finalizado"
       content_format:
@@ -614,7 +614,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      analysis_status: ["pendente", "em_analise", "analisado"],
+      analysis_status: ["pendente", "em_analise", "analisado", "erro"],
       app_role: ["admin", "social_media", "designer"],
       brief_status: ["novo", "em_andamento", "em_ajuste", "finalizado"],
       content_format: [
