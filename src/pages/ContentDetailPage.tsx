@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
 import { AIImprovePanel } from '@/components/AIImprovePanel';
+import { BriefGeneratorPanel } from '@/components/BriefGeneratorPanel';
 import { ContentStatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,17 +13,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Save, ArrowLeft, PenTool } from 'lucide-react';
 import { toast } from 'sonner';
-import { generateBriefWithAI } from '@/lib/ai';
 import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS } from '@/types';
-import type { Content, ContentPlatform, ContentFormat, ContentStatus } from '@/types';
+import type { Content, ContentStatus } from '@/types';
 
 export default function ContentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(false);
-  const [briefLoading, setBriefLoading] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [briefPanelOpen, setBriefPanelOpen] = useState(false);
 
   useEffect(() => {
     if (id) fetchContent();
@@ -58,37 +58,8 @@ export default function ContentDetailPage() {
     setAiPanelOpen(true);
   };
 
-  const handleGenerateBrief = async () => {
-    if (!content) return;
-    setBriefLoading(true);
-    try {
-      const briefData = await generateBriefWithAI({
-        theme: content.theme,
-        objective: content.objective,
-        platform: content.platform,
-        format: content.format,
-        targetAudience: content.target_audience,
-        rawText: content.raw_text,
-      });
-
-      const { error } = await supabase.from('briefs').insert({
-        content_id: content.id,
-        brief_title: `Brief: ${content.title}`,
-        ...briefData,
-      });
-
-      if (error) {
-        toast.error('Erro ao criar brief.');
-        console.error(error);
-      } else {
-        toast.success('Brief gerado com sucesso!');
-        await supabase.from('contents').update({ status: 'aguardando_design' }).eq('id', content.id);
-        setContent((prev) => prev ? { ...prev, status: 'aguardando_design' as ContentStatus } : null);
-      }
-    } catch {
-      toast.error('Erro ao gerar brief.');
-    }
-    setBriefLoading(false);
+  const handleBriefCreated = () => {
+    setContent((prev) => prev ? { ...prev, status: 'aguardando_design' as ContentStatus } : null);
   };
 
   if (!content) {
@@ -121,13 +92,12 @@ export default function ContentDetailPage() {
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={handleGenerateBrief}
-              disabled={briefLoading}
+              onClick={() => setBriefPanelOpen(true)}
               variant="outline"
               className="border-accent text-accent hover:bg-accent/10"
             >
-              <PenTool className={`h-4 w-4 mr-2 ${briefLoading ? 'animate-pulse-soft' : ''}`} />
-              {briefLoading ? 'Gerando...' : 'Gerar Brief com IA'}
+              <PenTool className="h-4 w-4 mr-2" />
+              Gerar Brief
             </Button>
             <Button onClick={handleSave} disabled={loading} className="bg-accent text-accent-foreground hover:bg-accent/90">
               <Save className="h-4 w-4 mr-2" />
@@ -237,6 +207,22 @@ export default function ContentDetailPage() {
         onOpenChange={setAiPanelOpen}
         originalText={content.raw_text}
         onAccept={(text) => updateField('improved_text', text)}
+      />
+
+      <BriefGeneratorPanel
+        open={briefPanelOpen}
+        onOpenChange={setBriefPanelOpen}
+        contentId={content.id}
+        contentTitle={content.title}
+        defaults={{
+          theme: content.theme,
+          objective: content.objective,
+          platform: content.platform,
+          format: content.format,
+          targetAudience: content.target_audience,
+          rawText: content.raw_text,
+        }}
+        onBriefCreated={handleBriefCreated}
       />
     </AppLayout>
   );

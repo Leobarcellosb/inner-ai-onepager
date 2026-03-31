@@ -6,11 +6,9 @@ import { BriefStatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Save, Palette, MessageSquare, Target, Eye, Layers, Type } from 'lucide-react';
+import { ArrowLeft, Save, Copy, Play, CheckCircle, Target, Eye, Palette, MessageSquare, Layers, Type, Lightbulb } from 'lucide-react';
 import { toast } from 'sonner';
-import { BRIEF_STATUS_LABELS } from '@/types';
 import type { Brief, BriefStatus } from '@/types';
 
 export default function BriefDetailPage() {
@@ -49,6 +47,38 @@ export default function BriefDetailPage() {
     setLoading(false);
   };
 
+  const handleStatusChange = async (newStatus: BriefStatus) => {
+    if (!brief) return;
+    const { error } = await supabase.from('briefs').update({ status: newStatus }).eq('id', brief.id);
+    if (error) {
+      toast.error('Erro ao atualizar status.');
+    } else {
+      setBrief((prev) => prev ? { ...prev, status: newStatus } : null);
+      toast.success(`Status atualizado para ${statusLabel(newStatus)}!`);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (!brief) return;
+    const { id: _id, created_at, updated_at, contents, ...briefData } = brief;
+    const { data, error } = await supabase.from('briefs').insert({
+      ...briefData,
+      brief_title: `${brief.brief_title} (cópia)`,
+      status: 'novo' as BriefStatus,
+    }).select().single();
+    if (error) {
+      toast.error('Erro ao duplicar brief.');
+    } else if (data) {
+      toast.success('Brief duplicado!');
+      navigate(`/briefs/${data.id}`);
+    }
+  };
+
+  const statusLabel = (s: BriefStatus) => {
+    const map: Record<BriefStatus, string> = { novo: 'Novo', em_andamento: 'Em Andamento', em_ajuste: 'Em Ajuste', finalizado: 'Finalizado' };
+    return map[s];
+  };
+
   if (!brief) {
     return (
       <AppLayout>
@@ -60,21 +90,22 @@ export default function BriefDetailPage() {
   }
 
   const sections = [
-    { label: 'Ângulo Criativo', field: 'creative_angle', icon: Target },
-    { label: 'Objetivo da Campanha', field: 'campaign_objective', icon: Target },
+    { label: 'Grande Ideia / Ângulo Criativo', field: 'creative_angle', icon: Lightbulb },
+    { label: 'Objetivo da Peça', field: 'campaign_objective', icon: Target },
     { label: 'Público-Alvo', field: 'target_audience', icon: Eye },
-    { label: 'Mensagem Principal', field: 'key_message', icon: MessageSquare },
-    { label: 'Direção Visual', field: 'visual_direction', icon: Palette },
+    { label: 'Mensagem Central', field: 'key_message', icon: MessageSquare },
+    { label: 'Direção Visual & Tom', field: 'visual_direction', icon: Palette },
     { label: 'Referências Visuais', field: 'visual_references', icon: Eye },
     { label: 'Elementos Obrigatórios', field: 'mandatory_elements', icon: Layers },
-    { label: 'Slides / Cenas Sugeridas', field: 'suggested_slides_or_scenes', icon: Layers },
+    { label: 'Estrutura por Slides / Cenas', field: 'suggested_slides_or_scenes', icon: Layers },
     { label: 'Resumo da Copy', field: 'copy_summary', icon: Type },
-    { label: 'CTA', field: 'cta', icon: MessageSquare },
+    { label: 'CTA', field: 'cta', icon: Target },
   ];
 
   return (
     <AppLayout>
       <div className="max-w-4xl space-y-6 animate-fade-in">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate('/briefs')}>
@@ -90,28 +121,55 @@ export default function BriefDetailPage() {
               </div>
             </div>
           </div>
-          <Button onClick={handleSave} disabled={loading} className="bg-accent text-accent-foreground hover:bg-accent/90">
-            <Save className="h-4 w-4 mr-2" />
-            {loading ? 'Salvando...' : 'Salvar Brief'}
-          </Button>
-        </div>
-
-        <div className="flex gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Status do Brief</Label>
-            <Select value={brief.status} onValueChange={(v) => updateField('status', v)}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(BRIEF_STATUS_LABELS).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleDuplicate}>
+              <Copy className="h-4 w-4 mr-2" />
+              Duplicar
+            </Button>
+            <Button onClick={handleSave} disabled={loading} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? 'Salvando...' : 'Salvar'}
+            </Button>
           </div>
         </div>
 
+        {/* Status actions */}
+        <div className="flex gap-2 flex-wrap">
+          {brief.status !== 'em_andamento' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleStatusChange('em_andamento')}
+              className="border-warning/50 text-warning hover:bg-warning/10"
+            >
+              <Play className="h-3.5 w-3.5 mr-1.5" />
+              Marcar como Em Andamento
+            </Button>
+          )}
+          {brief.status !== 'em_ajuste' && brief.status !== 'novo' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleStatusChange('em_ajuste')}
+              className="border-destructive/50 text-destructive hover:bg-destructive/10"
+            >
+              Em Ajuste
+            </Button>
+          )}
+          {brief.status !== 'finalizado' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleStatusChange('finalizado')}
+              className="border-accent/50 text-accent hover:bg-accent/10"
+            >
+              <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+              Marcar como Finalizado
+            </Button>
+          )}
+        </div>
+
+        {/* Brief sections in clean blocks */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {sections.map(({ label, field, icon: Icon }) => (
             <Card key={field} className="glass-card">
@@ -132,11 +190,12 @@ export default function BriefDetailPage() {
           ))}
         </div>
 
+        {/* Designer notes — full width */}
         <Card className="glass-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-display flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-accent" />
-              Notas do Designer
+              Observações para o Designer
             </CardTitle>
           </CardHeader>
           <CardContent>
