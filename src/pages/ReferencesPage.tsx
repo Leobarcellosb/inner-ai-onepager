@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
@@ -43,7 +44,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function ReferencesPage() {
   const { user } = useAuth();
-  const [refs, setRefs] = useState<Reference[]>([]);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [platformFilter, setPlatformFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -51,16 +52,17 @@ export default function ReferencesPage() {
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  useEffect(() => { fetchRefs(); }, []);
-
-  const fetchRefs = async () => {
-    const { data } = await supabase.from('references').select('*').order('created_at', { ascending: false });
-    if (data) setRefs(data as Reference[]);
-  };
+  const { data: refs = [] } = useQuery<Reference[]>({
+    queryKey: ['references', 'list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('references').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Reference[];
+    },
+  });
 
   const handleCreate = async () => {
     const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser();
-    console.log('[RLS_DEBUG:references] AUTH USER:', authUser, 'AUTH ERROR:', authErr);
     if (!authUser || !newRef.title.trim()) { toast.error('Título obrigatório ou não autenticado'); return; }
     setUploading(true);
     try {
@@ -86,14 +88,15 @@ export default function ReferencesPage() {
         uploaded_by: authUser.id,
         created_by: authUser.id,
       };
-      console.log('[RLS_DEBUG:references] INSERT payload:', payload, 'created_by===uid:', payload.created_by === authUser.id);
-      const { error } = await supabase.from('references').insert(payload);
-      if (error) { console.error('[RLS_DEBUG:references] INSERT ERROR:', error); throw error; }
+      const { error, status, statusText } = await supabase.from('references').insert(payload);
+      if (error) {
+        throw error;
+      }
       toast.success('Referência adicionada!');
       setDialogOpen(false);
       setNewRef({ title: '', source_name: '', platform: 'instagram', format: 'post_estatico', caption_or_observed_copy: '', observed_hook: '', tags: '' });
       setImageFile(null);
-      fetchRefs();
+      queryClient.invalidateQueries({ queryKey: ['references'] });
     } catch (e: any) {
       toast.error(e.message || 'Erro ao criar');
     } finally {

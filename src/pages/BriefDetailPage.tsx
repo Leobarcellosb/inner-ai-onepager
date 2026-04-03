@@ -22,12 +22,17 @@ export default function BriefDetailPage() {
   }, [id]);
 
   const fetchBrief = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('briefs')
       .select('*, contents(title)')
       .eq('id', id!)
       .single();
-    if (data) setBrief(data as Brief);
+    if (error || !data) {
+      toast.error('Brief não encontrado.');
+      navigate('/briefs');
+      return;
+    }
+    setBrief(data as Brief);
   };
 
   const updateField = (field: string, value: string) => {
@@ -37,14 +42,16 @@ export default function BriefDetailPage() {
   const handleSave = async () => {
     if (!brief) return;
     setLoading(true);
-    const { id: _id, created_at, contents, ...updateData } = brief;
-    const { error } = await supabase.from('briefs').update(updateData).eq('id', brief.id);
-    if (error) {
-      toast.error('Erro ao salvar brief.');
-    } else {
+    try {
+      const { id: _id, created_at, contents, ...updateData } = brief;
+      const { error } = await supabase.from('briefs').update(updateData).eq('id', brief.id);
+      if (error) throw error;
       toast.success('Brief atualizado!');
+    } catch {
+      toast.error('Erro ao salvar brief.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleStatusChange = async (newStatus: BriefStatus) => {

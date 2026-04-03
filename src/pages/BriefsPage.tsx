@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
 import { BriefStatusBadge } from '@/components/StatusBadge';
@@ -9,21 +10,20 @@ import { BRIEF_STATUS_LABELS } from '@/types';
 import type { Brief } from '@/types';
 
 export default function BriefsPage() {
-  const [briefs, setBriefs] = useState<Brief[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchBriefs();
-  }, []);
-
-  const fetchBriefs = async () => {
-    const { data } = await supabase
-      .from('briefs')
-      .select('*, contents(title)')
-      .order('created_at', { ascending: false });
-    if (data) setBriefs(data as Brief[]);
-  };
+  const { data: briefs = [] } = useQuery<Brief[]>({
+    queryKey: ['briefs', 'list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('briefs')
+        .select('*, contents(title)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Brief[];
+    },
+  });
 
   const filtered = briefs.filter((b) =>
     statusFilter === 'all' || b.status === statusFilter

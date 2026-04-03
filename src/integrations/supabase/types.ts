@@ -91,11 +91,13 @@ export type Database = {
           created_at: string
           created_by: string
           cta: string
+          figma_link: string | null
           format: Database["public"]["Enums"]["content_format"]
           funnel_stage: string
           id: string
           improved_text: string | null
           objective: string
+          parent_content_id: string | null
           platform: Database["public"]["Enums"]["content_platform"]
           posting_timezone: string
           raw_text: string
@@ -113,11 +115,13 @@ export type Database = {
           created_at?: string
           created_by: string
           cta?: string
+          figma_link?: string | null
           format?: Database["public"]["Enums"]["content_format"]
           funnel_stage?: string
           id?: string
           improved_text?: string | null
           objective?: string
+          parent_content_id?: string | null
           platform?: Database["public"]["Enums"]["content_platform"]
           posting_timezone?: string
           raw_text?: string
@@ -135,11 +139,13 @@ export type Database = {
           created_at?: string
           created_by?: string
           cta?: string
+          figma_link?: string | null
           format?: Database["public"]["Enums"]["content_format"]
           funnel_stage?: string
           id?: string
           improved_text?: string | null
           objective?: string
+          parent_content_id?: string | null
           platform?: Database["public"]["Enums"]["content_platform"]
           posting_timezone?: string
           raw_text?: string
@@ -151,6 +157,33 @@ export type Database = {
           theme?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          content_id: string | null
+          message: string
+          read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          content_id?: string | null
+          message: string
+          read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          content_id?: string | null
+          message?: string
+          read?: boolean
+          created_at?: string
         }
         Relationships: []
       }
@@ -489,13 +522,16 @@ export type Database = {
         | "whatsapp"
         | "multiuso"
       content_status:
-        | "ideia"
-        | "rascunho"
-        | "em_revisao"
-        | "aguardando_design"
-        | "em_design"
-        | "pronto"
-        | "publicado"
+        | "idea"
+        | "writing"
+        | "copy_review"
+        | "copy_approved"
+        | "design_queue"
+        | "designing"
+        | "final_review"
+        | "approved"
+        | "scheduled"
+        | "published"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -644,13 +680,16 @@ export const Constants = {
         "multiuso",
       ],
       content_status: [
-        "ideia",
-        "rascunho",
-        "em_revisao",
-        "aguardando_design",
-        "em_design",
-        "pronto",
-        "publicado",
+        "idea",
+        "writing",
+        "copy_review",
+        "copy_approved",
+        "design_queue",
+        "designing",
+        "final_review",
+        "approved",
+        "scheduled",
+        "published",
       ],
     },
   },

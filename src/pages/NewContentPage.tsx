@@ -13,13 +13,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Save, ArrowLeft } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { ensureScheduledDate, ensureScheduledTime } from '@/lib/pipeline';
 import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS, STATUSES_REQUIRING_SCHEDULE } from '@/types';
 import type { ContentPlatform, ContentFormat, ContentStatus } from '@/types';
 
 export default function NewContentPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [selectedRefId, setSelectedRefId] = useState<string | null>(null);
@@ -53,9 +56,9 @@ export default function NewContentPage() {
     raw_text: '',
     improved_text: '',
     cta: '',
-    status: 'rascunho' as ContentStatus,
-    scheduled_date: null as string | null,
-    scheduled_time: null as string | null,
+    status: 'idea' as ContentStatus,
+    scheduled_date: new Date().toISOString().slice(0, 10) as string | null,
+    scheduled_time: '10:00' as string | null,
     scheduled_datetime: null as string | null,
     posting_timezone: 'America/Sao_Paulo',
   });
@@ -116,7 +119,6 @@ export default function NewContentPage() {
   const handleSave = async () => {
     // Debug: verify auth state before insert
     const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
-    console.log("AUTH USER:", authUser);
     if (userError) console.error("AUTH ERROR:", userError);
 
     if (!authUser) {
@@ -128,31 +130,34 @@ export default function NewContentPage() {
       return;
     }
     setLoading(true);
+    try {
+      const { scheduled_datetime, ...rest } = form;
+      const payload = {
+        ...rest,
+        created_by: authUser.id,
+        scheduled_date: ensureScheduledDate(rest.scheduled_date),
+        scheduled_time: ensureScheduledTime(rest.scheduled_time),
+      };
 
-    // Build clean payload — exclude scheduled_datetime (computed by DB trigger)
-    const { scheduled_datetime, ...rest } = form;
-    const payload = {
-      ...rest,
-      created_by: authUser.id,
-    };
-    console.log("INSERT PAYLOAD:", payload);
-    console.log("created_by === auth.uid?", authUser.id);
+      const { error } = await supabase.from('contents').insert(payload);
 
-    const { error } = await supabase.from('contents').insert(payload);
-
-    if (error) {
-      console.error("INSERT ERROR:", error);
-      if (error.message?.includes('row-level security')) {
-        toast.error('Sem permissão para criar conteúdo. Verifique se seu perfil tem uma role atribuída.');
+      if (error) {
+        if (error.message?.includes('row-level security')) {
+          toast.error('Sem permissão para criar conteúdo. Verifique se seu perfil tem uma role atribuída.');
+        } else {
+          const msg = error.message?.includes('RAISE') ? error.message.replace(/.*RAISE.*: /, '') : error.message;
+          toast.error(msg || 'Erro ao salvar conteúdo.');
+        }
       } else {
-        const msg = error.message?.includes('RAISE') ? error.message.replace(/.*RAISE.*: /, '') : error.message;
-        toast.error(msg || 'Erro ao salvar conteúdo.');
+        queryClient.invalidateQueries({ queryKey: ['contents'] });
+        toast.success('Conteúdo salvo!');
+        navigate('/contents');
       }
-    } else {
-      toast.success('Conteúdo salvo!');
-      navigate('/contents');
+    } catch (e: any) {
+      toast.error(e.message || 'Erro de rede ao salvar.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

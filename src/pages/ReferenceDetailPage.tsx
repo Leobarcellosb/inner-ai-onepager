@@ -90,8 +90,13 @@ export default function ReferenceDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-    supabase.from('references').select('*').eq('id', id).single().then(({ data }) => {
-      if (data) setRef(data as Reference);
+    supabase.from('references').select('*').eq('id', id).single().then(({ data, error }) => {
+      if (error || !data) {
+        toast.error('Referência não encontrada.');
+        navigate('/intelligence/references');
+        return;
+      }
+      setRef(data as Reference);
     });
     supabase.from('reference_analyses').select('*').eq('reference_id', id).limit(1).single().then(({ data }) => {
       if (data) setAnalysis(data as Analysis);

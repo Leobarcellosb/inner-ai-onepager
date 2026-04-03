@@ -1,9 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_TIMEOUT_MS = 40_000;
 
 const BRIEF_SYSTEM_PROMPT = `Você é o assistente criativo da Inner AI. Sua função é gerar briefs criativos altamente práticos e acionáveis para designers.
 
@@ -31,6 +35,64 @@ Responda APENAS com um JSON válido (sem markdown, sem código, sem explicaçõe
   "cta": "call to action principal"
 }`;
 
+function safeParseJson(raw: string): Record<string, string> {
+  // Try direct parse first
+  try { return JSON.parse(raw); } catch { /* continue */ }
+  // Strip markdown fences
+  const stripped = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  try { return JSON.parse(stripped); } catch { /* continue */ }
+  // Try to extract JSON object from text
+  const match = stripped.match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch { /* give up */ }
+  }
+  throw new Error(`JSON inválido retornado pela IA: ${raw.slice(0, 300)}`);
+}
+
+async function callGeminiJson(systemPrompt: string, userPrompt: string): Promise<Record<string, string>> {
+  const apiKey = Deno.env.get("GEMINI_API_KEY");
+  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada nos Supabase Secrets");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+      {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            temperature: 0.8,
+            responseMimeType: "application/json",
+          },
+        }),
+      },
+    );
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      console.error(`[generate-brief] Gemini error ${res.status}: ${errBody.slice(0, 300)}`);
+      if (res.status === 429) throw new Error("Limite de requisições atingido.");
+      throw new Error(`Gemini API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error("Resposta vazia da IA");
+    return safeParseJson(text);
+  } catch (err: any) {
+    clearTimeout(timeout);
+    if (err?.name === "AbortError") throw new Error("IA não respondeu dentro do tempo limite.");
+    throw err;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -46,11 +108,18 @@ Deno.serve(async (req) => {
     const anonClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token);
-    if (claimsErr || !claimsData?.claims) {
+    const { data: { user }, error: userErr } = await anonClient.auth.getUser();
+    if (userErr || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    // Rate limit
+    {
+      const _rl = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const _rlErr = await checkRateLimit(_rl, user.id, { action: "generate_brief", windowMinutes: 60, maxRequests: 20 });
+      if (_rlErr) return new Response(JSON.stringify({ error: _rlErr }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
 
     // Input validation
     const body = await req.json();
@@ -68,22 +137,62 @@ Deno.serve(async (req) => {
     const safeRawText = typeof rawText === "string" ? rawText.slice(0, 5000) : "";
     const safeNotes = typeof notes === "string" ? notes.slice(0, 2000) : "";
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    // Fetch editorial guidelines
+    // Fetch company brain — context + hard rules
     let editorialContext = "";
     try {
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, serviceKey);
-      const { data: editorial } = await supabase.from("editorial_guidelines").select("*").limit(1).single();
-      if (editorial) {
-        const parts: string[] = [];
-        if (editorial.brand_positioning) parts.push(`Posicionamento: ${editorial.brand_positioning}`);
-        if (editorial.brand_voice) parts.push(`Tom de voz: ${editorial.brand_voice}`);
-        if (editorial.visual_identity_guidelines) parts.push(`Identidade visual: ${editorial.visual_identity_guidelines}`);
-        if (editorial.creative_principles) parts.push(`Princípios criativos: ${editorial.creative_principles}`);
-        if (parts.length > 0) editorialContext = `\n\nDIRETRIZES DA MARCA:\n${parts.join("\n")}`;
+      const { data: cfg } = await supabase.from("company_config").select("*").limit(1).single();
+      if (cfg) {
+        const icp = cfg.icp_json as Record<string, string> | null;
+        const ed = cfg.editorial_guidelines_json as Record<string, string> | null;
+        const voice = cfg.voice_tone_json as Record<string, string> | null;
+        const rules = cfg.rules_json as Record<string, string> | null;
+
+        const ctx: string[] = [];
+        if (icp?.persona) ctx.push(`Público-alvo: ${icp.persona}`);
+        if (icp?.pain_points) ctx.push(`Dores: ${icp.pain_points}`);
+        if (icp?.desires) ctx.push(`Desejos: ${icp.desires}`);
+        if (ed?.positioning) ctx.push(`Posicionamento: ${ed.positioning}`);
+        if (ed?.pillars) ctx.push(`Pilares: ${ed.pillars}`);
+        if (ed?.hook_patterns) ctx.push(`Ganchos preferidos: ${ed.hook_patterns}`);
+        if (ed?.copy_style) ctx.push(`Estilo de copy: ${ed.copy_style}`);
+        if (ed?.visual_patterns) ctx.push(`Padrões visuais: ${ed.visual_patterns}`);
+        if (ed?.visual_identity) ctx.push(`Identidade visual: ${ed.visual_identity}`);
+        if (ed?.creative_principles) ctx.push(`Princípios: ${ed.creative_principles}`);
+        if (voice?.voice) ctx.push(`Voz: ${voice.voice}`);
+
+        const rls: string[] = [];
+        if (rules?.content_structure) rls.push(`ESTRUTURA — o brief DEVE usar esta sequência para o conteúdo: ${rules.content_structure}`);
+        if (rules?.always_include) rls.push(`OBRIGATÓRIO — o brief DEVE prever estes elementos: ${rules.always_include}`);
+        if (rules?.never_include) rls.push(`PROIBIDO — o brief NÃO PODE incluir: ${rules.never_include}`);
+        if (voice?.forbidden_terms) rls.push(`TERMOS BANIDOS: ${voice.forbidden_terms}`);
+        if (voice?.cta_patterns) rls.push(`CTA — usar um destes: ${voice.cta_patterns}`);
+        if (rules?.design_rules) rls.push(`REGRAS VISUAIS: ${rules.design_rules}`);
+
+        // Learnings from analyzed references
+        const learn = cfg.learnings_json as Record<string, string[]> | null;
+        const lp: string[] = [];
+        if (learn?.hooks?.length) lp.push(`Ganchos que funcionaram: ${learn.hooks.slice(-5).join(" | ")}`);
+        if (learn?.copy_patterns?.length) lp.push(`Estruturas de copy eficazes: ${learn.copy_patterns.slice(-5).join(" | ")}`);
+        if (learn?.visual_patterns?.length) lp.push(`Padrões visuais validados: ${learn.visual_patterns.slice(-5).join(" | ")}`);
+        if (learn?.ctas?.length) lp.push(`CTAs validados: ${learn.ctas.slice(-5).join(" | ")}`);
+
+        let block = "";
+        if (ctx.length > 0) block += `\nCONTEXTO DA MARCA:\n${ctx.join("\n")}`;
+        if (lp.length > 0) block += `\n\nAPRENDIZADOS DE REFERÊNCIAS (inspire-se):\n${lp.join("\n")}`;
+        if (rls.length > 0) block += `\n\n⚠️ REGRAS INVIOLÁVEIS:\n${rls.map((r, i) => `${i + 1}. ${r}`).join("\n")}`;
+        // Knowledge base
+        try {
+          const { data: kbEntries } = await supabase.from("knowledge_entries")
+            .select("extracted_insights").order("created_at", { ascending: false }).limit(5);
+          if (kbEntries) {
+            const insights = kbEntries.flatMap((e: any) => Array.isArray(e.extracted_insights) ? e.extracted_insights : []);
+            if (insights.length > 0) block += `\n\nCONHECIMENTO ADICIONAL:\n${insights.slice(0, 8).join("\n")}`;
+          }
+        } catch { /* no knowledge yet */ }
+
+        if (block) editorialContext = block;
       }
     } catch { /* not configured yet */ }
 
@@ -117,42 +226,14 @@ ${referenceContext}
 
 Gere o brief completo em JSON.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: BRIEF_SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) return new Response(JSON.stringify({ error: "Limite de requisições atingido." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      if (response.status === 402) return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      console.error("AI gateway error:", response.status);
-      return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    const data = await response.json();
-    let content = data.choices?.[0]?.message?.content || "";
-    content = content.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-
-    let briefData;
-    try {
-      briefData = JSON.parse(content);
-    } catch {
-      console.error("Failed to parse AI response:", content);
-      return new Response(JSON.stringify({ error: "A IA retornou um formato inválido. Tente novamente." }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    const briefData = await callGeminiJson(BRIEF_SYSTEM_PROMPT, userPrompt);
 
     return new Response(JSON.stringify({ brief: briefData }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e) {
-    console.error("generate-brief error:", e);
-    return new Response(JSON.stringify({ error: "Erro interno" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  } catch (e: any) {
+    console.error("generate-brief error:", e?.message ?? e);
+    const status = e?.message?.includes("Limite") ? 429 : 500;
+    return new Response(JSON.stringify({ error: e?.message || "Erro interno" }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

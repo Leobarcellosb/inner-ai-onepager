@@ -1,0 +1,19 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" rx="40" fill="#0C0C18"/>
+  <!-- Central node -->
+  <circle cx="100" cy="100" r="28" fill="#7B61FB"/>
+  <!-- Top satellite -->
+  <circle cx="100" cy="30" r="16" fill="#7B61FB" opacity="0.8"/>
+  <!-- Bottom-right satellite -->
+  <circle cx="161" cy="136" r="16" fill="#7B61FB" opacity="0.8"/>
+  <!-- Bottom-left satellite -->
+  <circle cx="39" cy="136" r="16" fill="#7B61FB" opacity="0.8"/>
+  <!-- Center to top -->
+  <line x1="100" y1="72" x2="100" y2="46" stroke="#7B61FB" stroke-width="8" stroke-linecap="round" opacity="0.4"/>
+  <!-- Center to bottom-right -->
+  <line x1="122" y1="118" x2="145" y2="128" stroke="#7B61FB" stroke-width="8" stroke-linecap="round" opacity="0.4"/>
+  <!-- Center to bottom-left -->
+  <line x1="78" y1="118" x2="55" y2="128" stroke="#7B61FB" stroke-width="8" stroke-linecap="round" opacity="0.4"/>
+  <!-- Bottom cross -->
+  <line x1="55" y1="136" x2="145" y2="136" stroke="#7B61FB" stroke-width="5" stroke-linecap="round" opacity="0.25"/>
+</svg>

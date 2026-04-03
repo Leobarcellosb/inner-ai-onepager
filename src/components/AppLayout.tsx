@@ -1,16 +1,24 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center border-b border-border bg-card px-4 shrink-0">
-            <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+          <header
+            className="h-12 flex items-center justify-between px-5 shrink-0"
+            style={{
+              background: 'hsl(240 15% 5%)',
+              borderBottom: '1px solid hsl(240 11% 10%)',
+            }}
+          >
+            <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
+            <NotificationBell />
           </header>
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto p-6 lg:p-8">
             {children}
           </main>
         </div>

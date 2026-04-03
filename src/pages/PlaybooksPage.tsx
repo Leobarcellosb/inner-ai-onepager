@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
@@ -25,18 +26,20 @@ interface Playbook {
 
 export default function PlaybooksPage() {
   const { user } = useAuth();
-  const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Playbook | null>(null);
   const [form, setForm] = useState({ title: '', category: '', summary: '', framework: '', examples: '', recommended_use_cases: '' });
 
-  useEffect(() => { fetchPlaybooks(); }, []);
-
-  const fetchPlaybooks = async () => {
-    const { data } = await supabase.from('playbooks').select('*').order('created_at', { ascending: false });
-    if (data) setPlaybooks(data as Playbook[]);
-  };
+  const { data: playbooks = [] } = useQuery<Playbook[]>({
+    queryKey: ['playbooks', 'list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('playbooks').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Playbook[];
+    },
+  });
 
   const openEdit = (pb: Playbook) => {
     setEditing(pb);
@@ -52,23 +55,18 @@ export default function PlaybooksPage() {
 
   const handleSave = async () => {
     const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser();
-    console.log('[RLS_DEBUG:playbooks] AUTH USER:', authUser, 'AUTH ERROR:', authErr);
     if (!authUser || !form.title.trim()) { toast.error('Título obrigatório ou não autenticado'); return; }
     try {
       if (editing) {
-        console.log('[RLS_DEBUG:playbooks] UPDATE id:', editing.id, 'form:', form);
         const { error } = await supabase.from('playbooks').update(form).eq('id', editing.id);
-        if (error) { console.error('[RLS_DEBUG:playbooks] UPDATE ERROR:', error); throw error; }
         toast.success('Playbook atualizado!');
       } else {
         const payload = { ...form, created_by: authUser.id };
-        console.log('[RLS_DEBUG:playbooks] INSERT payload:', payload, 'created_by===uid:', payload.created_by === authUser.id);
         const { error } = await supabase.from('playbooks').insert(payload);
-        if (error) { console.error('[RLS_DEBUG:playbooks] INSERT ERROR:', error); throw error; }
         toast.success('Playbook criado!');
       }
       setDialogOpen(false);
-      fetchPlaybooks();
+      queryClient.invalidateQueries({ queryKey: ['playbooks'] });
     } catch (e: any) {
       toast.error(e.message || 'Erro');
     }
@@ -78,7 +76,7 @@ export default function PlaybooksPage() {
     const { error } = await supabase.from('playbooks').delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
     toast.success('Playbook excluído');
-    fetchPlaybooks();
+    queryClient.invalidateQueries({ queryKey: ['playbooks'] });
   };
 
   const filtered = playbooks.filter(p => !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase()));

@@ -32,8 +32,8 @@ export function ScheduleSection({
   const isScheduled = scheduledDate && scheduledTime;
   const needsSchedule = currentStatus && (
     STATUSES_REQUIRING_SCHEDULE.includes(currentStatus) ||
-    currentStatus === 'em_design' ||
-    currentStatus === 'aguardando_design'
+    currentStatus === 'designing' ||
+    currentStatus === 'copy_approved'
   );
 
   const setQuickDate = (date: Date) => {

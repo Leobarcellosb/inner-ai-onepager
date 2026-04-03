@@ -59,21 +59,16 @@ export default function EditorialPage() {
 
   const handleSave = async () => {
     const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser();
-    console.log('[RLS_DEBUG:editorial] AUTH USER:', authUser, 'AUTH ERROR:', authErr);
     if (!authUser) { toast.error('Usuário não autenticado.'); return; }
     setSaving(true);
     try {
       const { id, ...fields } = data;
       if (id) {
-        console.log('[RLS_DEBUG:editorial] UPDATE id:', id, 'fields:', fields);
         const { error } = await supabase.from('editorial_guidelines').update(fields).eq('id', id);
-        if (error) { console.error('[RLS_DEBUG:editorial] UPDATE ERROR:', error); throw error; }
       } else {
         const payload = { ...fields, created_by: authUser.id };
-        console.log('[RLS_DEBUG:editorial] INSERT payload:', payload, 'created_by===uid:', payload.created_by === authUser.id);
         const { data: created, error } = await supabase.from('editorial_guidelines')
           .insert(payload).select().single();
-        if (error) { console.error('[RLS_DEBUG:editorial] INSERT ERROR:', error); throw error; }
         if (created) setData(created as EditorialData);
       }
       toast.success('Linha editorial salva!');

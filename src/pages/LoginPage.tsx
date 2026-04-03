@@ -4,8 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
@@ -40,77 +38,110 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md glass-card animate-fade-in">
-        <CardHeader className="text-center pb-2">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <Sparkles className="h-6 w-6 text-accent" />
-            </div>
-          </div>
-          <h1 className="font-display text-2xl font-bold text-foreground">
-            Inner AI
+    <div
+      className="flex min-h-screen items-center justify-center p-4"
+      style={{ background: 'hsl(240 20% 3%)' }}
+    >
+      {/* Subtle radial glow behind the card */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse 700px 500px at 50% 40%, hsl(258 82% 64% / 0.06) 0%, transparent 70%)',
+        }}
+      />
+
+      <div className="relative w-full max-w-sm animate-fade-in">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-10">
+          <img
+            src="/icon-inner-ai.png"
+            alt="Inner AI"
+            className="h-16 w-16 mb-6 object-contain"
+            draggable={false}
+          />
+          <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">
+            {isSignUp ? 'Criar conta' : 'Acessar plataforma'}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Social Media Manager
+          <p className="text-sm text-muted-foreground mt-1.5">
+            Inner AI — Central de Inteligência
           </p>
-        </CardHeader>
-        <CardContent>
+        </div>
+
+        {/* Form card */}
+        <div
+          className="rounded-xl p-7 space-y-5"
+          style={{
+            background: 'hsl(240 13% 7%)',
+            border: '1px solid hsl(240 11% 13%)',
+          }}
+        >
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Nome
+                </Label>
                 <Input
-                  id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Seu nome"
                   required={isSignUp}
+                  className="bg-background border-border/60 focus:border-accent/50"
                 />
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Email
+              </Label>
               <Input
-                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
                 required
+                className="bg-background border-border/60 focus:border-accent/50"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Senha
+              </Label>
               <Input
-                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
                 minLength={6}
+                className="bg-background border-border/60 focus:border-accent/50"
               />
             </div>
+
             <Button
               type="submit"
-              className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
               disabled={loading}
+              className="w-full font-semibold mt-2"
+              style={{
+                background: loading ? undefined : 'hsl(258 82% 64%)',
+                color: '#fff',
+              }}
             >
               {loading ? 'Aguarde...' : isSignUp ? 'Criar conta' : 'Entrar'}
             </Button>
           </form>
-          <div className="mt-4 text-center">
+
+          <div className="text-center pt-1">
             <button
               type="button"
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               {isSignUp ? 'Já tem conta? Entrar' : 'Não tem conta? Criar conta'}
             </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

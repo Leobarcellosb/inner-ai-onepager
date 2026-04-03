@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +43,7 @@ export function BriefGeneratorPanel({
   defaults,
   onBriefCreated,
 }: BriefGeneratorPanelProps) {
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [notes, setNotes] = useState('');
   const [form, setForm] = useState(defaults);
@@ -91,8 +93,7 @@ export function BriefGeneratorPanel({
       });
 
       const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser();
-      console.log('[RLS_DEBUG:briefs] AUTH USER:', authUser, 'AUTH ERROR:', authErr);
-      if (!authUser) { toast.error('Usuário não autenticado.'); setLoading(false); return; }
+      if (!authUser) { toast.error('Usuário não autenticado.'); return; }
 
       const briefPayload = {
         content_id: contentId,
@@ -100,23 +101,27 @@ export function BriefGeneratorPanel({
         ...briefData,
         created_by: authUser.id,
       };
-      console.log('[RLS_DEBUG:briefs] INSERT payload:', briefPayload, 'created_by===uid:', briefPayload.created_by === authUser.id);
       const { error } = await supabase.from('briefs').insert(briefPayload);
 
       if (error) {
-        console.error('[RLS_DEBUG:briefs] INSERT ERROR:', error);
         toast.error('Erro ao salvar brief.');
       } else {
-        // Update content status
-        await supabase.from('contents').update({ status: 'aguardando_design' as ContentStatus }).eq('id', contentId);
-        toast.success('Brief gerado e salvo com sucesso!');
+        // Only advance to design_queue if currently in copy_approved (valid ±1 transition)
+        const { data: current } = await supabase.from('contents').select('status').eq('id', contentId).single();
+        if (current?.status === 'copy_approved') {
+          await supabase.from('contents').update({ status: 'design_queue' }).eq('id', contentId);
+        }
+        queryClient.invalidateQueries({ queryKey: ['contents'] });
+        queryClient.invalidateQueries({ queryKey: ['briefs'] });
+        toast.success('Brief gerado e salvo!');
         onBriefCreated();
         onOpenChange(false);
       }
     } catch (err: any) {
       toast.error(err.message || 'Erro ao gerar brief.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

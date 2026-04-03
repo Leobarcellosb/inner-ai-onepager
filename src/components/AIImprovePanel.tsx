@@ -36,8 +36,9 @@ export function AIImprovePanel({ open, onOpenChange, originalText, onAccept }: A
       toast.success('Texto melhorado com sucesso!');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao melhorar texto.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleAccept = () => {

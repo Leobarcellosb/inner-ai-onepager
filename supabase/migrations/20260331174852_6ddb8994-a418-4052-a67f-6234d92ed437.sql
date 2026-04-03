@@ -1,1 +1,0 @@
-ALTER TYPE public.analysis_status ADD VALUE IF NOT EXISTS 'erro';

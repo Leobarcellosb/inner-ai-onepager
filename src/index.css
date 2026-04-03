@@ -6,48 +6,53 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 213 32% 6%;
+    /* ── Base surfaces ────────────────────────────────────────── */
+    --background: 240 15% 5%;          /* near-black body  #090912 */
+    --foreground: 240 5% 93%;          /* near-white text  #ECECf2 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 213 32% 6%;
+    --card: 240 13% 7%;                /* dark card surface */
+    --card-foreground: 240 5% 93%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 213 32% 6%;
+    --popover: 240 13% 8%;
+    --popover-foreground: 240 5% 93%;
 
-    --primary: 213 32% 6%;
-    --primary-foreground: 210 40% 98%;
+    /* primary = white — aligns with the Inner AI black+white mark */
+    --primary: 0 0% 93%;
+    --primary-foreground: 240 15% 5%;
 
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 240 11% 11%;
+    --secondary-foreground: 240 5% 78%;
 
-    --muted: 215 25% 93%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 240 11% 11%;
+    --muted-foreground: 240 5% 50%;
 
-    --accent: 142 71% 45%;
+    /* accent = violet — AI positioning, stands out on dark bg */
+    --accent: 258 82% 64%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 80% 56%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 142 71% 45%;
+    --border: 240 11% 13%;
+    --input: 240 11% 13%;
+    --ring: 258 82% 64%;
 
-    --radius: 0.625rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 213 32% 6%;
-    --sidebar-foreground: 215 20% 75%;
-    --sidebar-primary: 142 71% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 14%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 222 30% 16%;
-    --sidebar-ring: 142 71% 45%;
+    /* ── Sidebar ─ matches the logo: pure near-black ─────────── */
+    --sidebar-background: 240 20% 3%;      /* #050509 almost pure black */
+    --sidebar-foreground: 240 8% 58%;
+    --sidebar-primary: 0 0% 93%;           /* white — brand primary */
+    --sidebar-primary-foreground: 240 20% 3%;
+    --sidebar-accent: 240 15% 8%;
+    --sidebar-accent-foreground: 0 0% 93%;
+    --sidebar-border: 240 15% 8%;
+    --sidebar-ring: 258 82% 64%;
 
-    --success: 142 71% 45%;
-    --warning: 38 92% 50%;
-    --info: 217 91% 60%;
+    /* ── Status ──────────────────────────────────────────────── */
+    --success: 142 60% 42%;
+    --warning: 38 90% 50%;
+    --info: 217 88% 58%;
   }
 }
 
@@ -68,7 +73,24 @@
 }
 
 @layer utilities {
+  /* Subtle elevated surface for cards */
   .glass-card {
-    @apply bg-card border border-border/60 shadow-sm;
+    @apply bg-card border border-border/80;
+  }
+
+  /* Slightly elevated from card — e.g. inputs, nested panels */
+  .surface-raised {
+    background-color: hsl(240 13% 10%);
+    @apply border border-border/60;
+  }
+
+  /* Accent glow — for key interactive elements */
+  .glow-accent {
+    box-shadow: 0 0 18px -4px hsl(258 82% 64% / 0.35);
+  }
+
+  /* Premium separator */
+  .divider {
+    @apply border-t border-border/60;
   }
 }
