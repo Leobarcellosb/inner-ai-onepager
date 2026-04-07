@@ -9,11 +9,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <header
-            className="h-12 flex items-center justify-between px-5 shrink-0"
-            style={{
-              background: 'hsl(240 15% 5%)',
-              borderBottom: '1px solid hsl(240 11% 10%)',
-            }}
+            className="h-12 flex items-center justify-between px-5 shrink-0 bg-background border-b border-border"
           >
             <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
             <NotificationBell />

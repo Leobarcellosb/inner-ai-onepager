@@ -20,9 +20,6 @@ import { toast } from 'sonner';
 import { ensureScheduledDate, ensureScheduledTime } from '@/lib/pipeline';
 import { PLATFORM_LABELS } from '@/types';
 
-const SURFACE = 'hsl(240 13% 7%)';
-const BORDER = 'hsl(240 11% 13%)';
-
 const SLIDE_TYPE_COLORS: Record<string, string> = {
   hook:    'hsl(38 90% 50%)',
   value:   'hsl(217 88% 58%)',
@@ -154,8 +151,7 @@ export default function StoriesPage() {
 
         {/* Input */}
         <div
-          className="rounded-xl p-5 space-y-4"
-          style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+          className="rounded-xl p-5 space-y-4 bg-card border border-border"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -215,11 +211,10 @@ export default function StoriesPage() {
         {/* Result */}
         {sequence && (
           <div
-            className="rounded-xl overflow-hidden"
-            style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+            className="rounded-xl overflow-hidden bg-card border border-border"
           >
             {/* Sequence header */}
-            <div className="px-5 py-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <div className="px-5 py-4 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground/90">{sequence.sequence_title}</h2>
               <p className="text-xs text-muted-foreground mt-1">{sequence.objective}</p>
               <div className="flex items-center gap-2 mt-2">
@@ -229,7 +224,7 @@ export default function StoriesPage() {
             </div>
 
             {/* Slides */}
-            <div className="divide-y" style={{ borderColor: BORDER }}>
+            <div className="divide-y divide-border">
               {sequence.slides.map((slide) => {
                 const typeColor = SLIDE_TYPE_COLORS[slide.type] ?? 'hsl(240 5% 50%)';
                 return (
@@ -275,7 +270,7 @@ export default function StoriesPage() {
             </div>
 
             {/* Save */}
-            <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: `1px solid ${BORDER}` }}>
+            <div className="flex items-center justify-between px-5 py-3 border-t border-border">
               <span className="text-xs text-muted-foreground">
                 {sequence.total_slides} slides prontos para o pipeline
               </span>

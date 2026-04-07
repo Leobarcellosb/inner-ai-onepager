@@ -28,9 +28,6 @@ import * as pdfjsLib from 'pdfjs-dist';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
-const SURFACE = 'hsl(240 13% 7%)';
-const BORDER = 'hsl(240 11% 13%)';
-
 const VALID_PLATFORMS = new Set(Object.keys(PLATFORM_LABELS));
 const VALID_FORMATS = new Set(Object.keys(FORMAT_LABELS));
 
@@ -293,14 +290,14 @@ export default function ImportPage() {
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
-              className="rounded-xl p-8 text-center transition-all cursor-pointer"
-              style={{
-                background: dragOver ? 'hsl(217 88% 58% / 0.05)' : SURFACE,
-                border: `2px dashed ${dragOver ? 'hsl(217 88% 58%)' : BORDER}`,
-              }}
+              className={`rounded-xl p-8 text-center transition-all cursor-pointer border-2 border-dashed ${dragOver ? '' : 'bg-card border-border'}`}
+              style={dragOver ? {
+                background: 'hsl(217 88% 58% / 0.05)',
+                borderColor: 'hsl(217 88% 58%)',
+              } : undefined}
               onClick={() => document.getElementById('file-input')?.click()}
             >
-              <FileText className="h-10 w-10 mx-auto mb-3" style={{ color: dragOver ? 'hsl(217 88% 58%)' : 'hsl(240 5% 30%)' }} />
+              <FileText className={`h-10 w-10 mx-auto mb-3 ${dragOver ? 'text-info' : 'text-muted-foreground/50'}`} />
               <p className="text-sm text-foreground/70">
                 {fileName ? `Arquivo: ${fileName}` : 'Arraste um arquivo ou clique para selecionar'}
               </p>
@@ -382,12 +379,8 @@ export default function ImportPage() {
               {items.map((item, i) => (
                 <div
                   key={i}
-                  className="rounded-xl overflow-hidden transition-all"
-                  style={{
-                    background: SURFACE,
-                    border: `1px solid ${BORDER}`,
-                    opacity: item._selected ? 1 : 0.4,
-                  }}
+                  className="rounded-xl overflow-hidden transition-all bg-card border border-border"
+                  style={{ opacity: item._selected ? 1 : 0.4 }}
                 >
                   {/* Card header */}
                   <div className="flex items-start gap-3 px-4 py-3">
@@ -395,7 +388,7 @@ export default function ImportPage() {
                       onClick={() => toggleItem(i)}
                       className="mt-1 shrink-0 flex h-5 w-5 items-center justify-center rounded border transition-colors"
                       style={{
-                        borderColor: item._selected ? 'hsl(142 60% 42%)' : BORDER,
+                        borderColor: item._selected ? 'hsl(142 60% 42%)' : 'hsl(var(--border))',
                         background: item._selected ? 'hsl(142 60% 42%)' : 'transparent',
                       }}
                     >
@@ -434,7 +427,7 @@ export default function ImportPage() {
 
                   {/* Inline edit */}
                   {item._editing && (
-                    <div className="px-4 pb-3 space-y-2" style={{ borderTop: `1px solid ${BORDER}` }}>
+                    <div className="px-4 pb-3 space-y-2 border-t border-border">
                       <div className="grid grid-cols-2 gap-2 pt-2">
                         <div className="space-y-1">
                           <label className="text-[9px] text-muted-foreground">Título</label>
@@ -516,8 +509,7 @@ export default function ImportPage() {
         {/* STEP 3: Done */}
         {step === 'done' && (
           <div
-            className="rounded-xl p-12 text-center"
-            style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+            className="rounded-xl p-12 text-center bg-card border border-border"
           >
             <Check className="h-12 w-12 text-success mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-foreground mb-2">Importação concluída</h2>

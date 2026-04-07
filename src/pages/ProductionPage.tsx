@@ -45,10 +45,6 @@ import { STATUS_ACCENT } from '@/components/PipelineBar';
 import { validateTransition } from '@/lib/pipeline';
 import { notifyStatusChange } from '@/lib/notifications';
 
-const SURFACE    = 'hsl(240 13% 7%)';
-const SURFACE_HI = 'hsl(240 15% 10%)';
-const BORDER     = 'hsl(240 11% 13%)';
-
 const PRIORITY_DOT: Record<ContentPriority, string> = {
   low:    'hsl(240 5% 45%)',
   medium: 'hsl(217 88% 58%)',
@@ -126,12 +122,10 @@ function ProductionCard({
     opacity: isDragging ? 0.3 : 1,
     cursor: isUpdating ? 'wait' : 'grab',
     transition: isDragging ? undefined : 'opacity 150ms',
-    background: SURFACE_HI,
-    border: `1px solid hsl(240 11% 11%)`,
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="rounded-lg select-none">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="rounded-lg select-none bg-secondary border border-border">
       <div className="p-3 flex flex-col gap-1.5" onClick={(e) => { e.stopPropagation(); onClick(content.id); }}>
         {isUpdating && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground self-end" />}
 
@@ -194,7 +188,7 @@ function ProductionCard({
 
       {/* Brief toggle (design cards only) */}
       {brief && (
-        <div style={{ borderTop: '1px solid hsl(240 11% 11%)' }}>
+        <div className="border-t border-border">
           <button
             onClick={(e) => { e.stopPropagation(); setBriefOpen(!briefOpen); }}
             className="flex items-center gap-1.5 w-full px-3 py-1.5 text-[9px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
@@ -224,7 +218,7 @@ function ProductionCard({
 
       {/* Carousel script preview (design cards with carousel) */}
       {isDesignCard && content.format === 'carrossel' && content.carousel_script && (
-        <div style={{ borderTop: '1px solid hsl(240 11% 11%)' }}>
+        <div className="border-t border-border">
           <div className="px-3 py-2">
             <span className="text-[9px] uppercase tracking-wider text-accent/60 font-semibold">Roteiro ({(content.carousel_script as any)?.slides?.length ?? '?'} slides)</span>
             <div className="mt-1 space-y-0.5">
@@ -243,7 +237,7 @@ function ProductionCard({
 
       {/* Figma link + deliver (design cards only) */}
       {isDesignCard && (
-        <div style={{ borderTop: '1px solid hsl(240 11% 11%)' }}>
+        <div className="border-t border-border">
           {!figmaOpen && !content.figma_link ? (
             <button
               onClick={(e) => { e.stopPropagation(); setFigmaOpen(true); }}
@@ -327,12 +321,12 @@ function ProductionColumn({
 
   return (
     <div
-      className="flex-1 min-w-[240px] flex flex-col rounded-xl overflow-hidden"
-      style={{ border: `1px solid ${isOver ? accent + '50' : BORDER}`, background: SURFACE, transition: 'border-color 150ms' }}
+      className="flex-1 min-w-[240px] flex flex-col rounded-xl overflow-hidden bg-card border border-border"
+      style={{ borderColor: isOver ? accent + '50' : undefined, transition: 'border-color 150ms' }}
     >
       <div
-        className="flex items-center justify-between px-3 py-2.5 shrink-0"
-        style={{ borderBottom: `1px solid ${BORDER}`, borderLeft: `3px solid ${accent}` }}
+        className="flex items-center justify-between px-3 py-2.5 shrink-0 border-b border-border"
+        style={{ borderLeft: `3px solid ${accent}` }}
       >
         <span className="text-xs font-semibold" style={{ color: accent }}>
           {STATUS_LABELS[status]}
@@ -355,8 +349,8 @@ function ProductionColumn({
       >
         {cards.length === 0 ? (
           <div
-            className="flex items-center justify-center rounded-lg border border-dashed text-[10px]"
-            style={{ minHeight: 60, borderColor: isOver ? `${accent}30` : 'hsl(240 11% 11%)', color: 'hsl(240 5% 30%)' }}
+            className="flex items-center justify-center rounded-lg border border-dashed text-[10px] border-border text-muted-foreground/50"
+            style={{ minHeight: 60, borderColor: isOver ? `${accent}30` : undefined }}
           >
             {isOver ? 'Soltar aqui' : 'Nenhum item'}
           </div>
@@ -383,9 +377,8 @@ function ProductionColumn({
 function OverlayCard({ content }: { content: Content }) {
   return (
     <div
-      className="w-56 rounded-lg p-3 shadow-2xl"
+      className="w-56 rounded-lg p-3 shadow-2xl bg-secondary"
       style={{
-        background: SURFACE_HI,
         border: '1px solid hsl(258 82% 64% / 0.4)',
         boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
         cursor: 'grabbing',
@@ -533,8 +526,7 @@ export default function ProductionPage() {
 
         {/* Lane tabs + owner filter */}
         <div
-          className="flex items-center justify-between gap-3 rounded-xl px-4 py-2.5"
-          style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+          className="flex items-center justify-between gap-3 rounded-xl px-4 py-2.5 bg-card border border-border"
         >
           {/* Lane selector */}
           <div className="flex items-center gap-1">
@@ -546,19 +538,19 @@ export default function ProductionPage() {
               <button
                 key={id}
                 onClick={() => setActiveLane(id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeLane === id ? '' : 'text-muted-foreground'}`}
                 style={{
                   background: activeLane === id ? 'hsl(258 82% 64%)' : 'transparent',
-                  color: activeLane === id ? '#fff' : 'hsl(240 5% 50%)',
+                  color: activeLane === id ? '#fff' : undefined,
                 }}
               >
                 {Icon && <Icon className="h-3 w-3" />}
                 {label}
                 <span
-                  className="text-[9px] font-bold px-1 py-0.5 rounded-full ml-0.5"
+                  className={`text-[9px] font-bold px-1 py-0.5 rounded-full ml-0.5 ${activeLane === id ? '' : 'bg-muted text-muted-foreground'}`}
                   style={{
-                    background: activeLane === id ? 'rgba(255,255,255,0.2)' : 'hsl(240 11% 13%)',
-                    color: activeLane === id ? '#fff' : 'hsl(240 5% 45%)',
+                    background: activeLane === id ? 'rgba(255,255,255,0.2)' : undefined,
+                    color: activeLane === id ? '#fff' : undefined,
                   }}
                 >
                   {count}
@@ -573,21 +565,13 @@ export default function ProductionPage() {
             <div className="flex items-center gap-0.5">
               <button
                 onClick={() => setOwnerFilter('all')}
-                className="px-2 py-1 rounded text-[10px] font-medium transition-all"
-                style={{
-                  background: ownerFilter === 'all' ? 'hsl(240 15% 13%)' : 'transparent',
-                  color: ownerFilter === 'all' ? 'hsl(240 5% 85%)' : 'hsl(240 5% 45%)',
-                }}
+                className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${ownerFilter === 'all' ? 'bg-secondary text-foreground/85' : 'text-muted-foreground'}`}
               >
                 Todos
               </button>
               <button
                 onClick={() => setOwnerFilter('mine')}
-                className="px-2 py-1 rounded text-[10px] font-medium transition-all"
-                style={{
-                  background: ownerFilter === 'mine' ? 'hsl(240 15% 13%)' : 'transparent',
-                  color: ownerFilter === 'mine' ? 'hsl(240 5% 85%)' : 'hsl(240 5% 45%)',
-                }}
+                className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${ownerFilter === 'mine' ? 'bg-secondary text-foreground/85' : 'text-muted-foreground'}`}
               >
                 Meus
               </button>
@@ -595,11 +579,7 @@ export default function ProductionPage() {
                 <button
                   key={t.id}
                   onClick={() => setOwnerFilter(t.id)}
-                  className="px-2 py-1 rounded text-[10px] font-medium transition-all truncate max-w-[60px]"
-                  style={{
-                    background: ownerFilter === t.id ? 'hsl(240 15% 13%)' : 'transparent',
-                    color: ownerFilter === t.id ? 'hsl(240 5% 85%)' : 'hsl(240 5% 45%)',
-                  }}
+                  className={`px-2 py-1 rounded text-[10px] font-medium transition-all truncate max-w-[60px] ${ownerFilter === t.id ? 'bg-secondary text-foreground/85' : 'text-muted-foreground'}`}
                 >
                   {t.name.split(' ')[0]}
                 </button>

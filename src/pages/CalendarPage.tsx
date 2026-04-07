@@ -92,11 +92,6 @@ const GANTT_SCALE_CONFIG: Record<GanttScale, { days: number; pxPerDay: number }>
   mes:    { days: 90,  pxPerDay: 14 },
 };
 
-const SURFACE      = 'hsl(240 13% 7%)';
-const SURFACE_HI   = 'hsl(240 15% 10%)';
-const BORDER       = 'hsl(240 11% 13%)';
-const BORDER_INNER = 'hsl(240 11% 11%)';
-
 import { useContents } from '@/hooks/useContents';
 
 // ── Kanban card (draggable + droppable target) ─────────────────────────────
@@ -119,8 +114,6 @@ function KanbanCard({ content, updatingId, onClick }: KanbanCardProps) {
     opacity:   isDragging  ? 0.35 : 1,
     cursor:    isUpdating  ? 'wait' : 'grab',
     transition: isDragging ? undefined : 'opacity 150ms',
-    background: SURFACE_HI,
-    border: `1px solid ${BORDER_INNER}`,
   };
 
   return (
@@ -129,7 +122,7 @@ function KanbanCard({ content, updatingId, onClick }: KanbanCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="rounded-lg p-3 flex flex-col gap-2 select-none"
+      className="rounded-lg p-3 flex flex-col gap-2 select-none bg-secondary border border-border"
       onClick={(e) => { e.stopPropagation(); onClick(content.id); }}
     >
       {isUpdating && (
@@ -182,14 +175,13 @@ function KanbanColumn({ status, cards, updatingId, onCardClick }: KanbanColumnPr
 
   return (
     <div
-      className="flex-shrink-0 w-56 flex flex-col rounded-xl overflow-hidden"
-      style={{ border: `1px solid ${isOver ? accent + '50' : BORDER}`, background: SURFACE, transition: 'border-color 150ms' }}
+      className="flex-shrink-0 w-56 flex flex-col rounded-xl overflow-hidden bg-card border border-border"
+      style={{ borderColor: isOver ? accent + '50' : undefined, transition: 'border-color 150ms' }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-3 py-2.5 shrink-0"
+        className="flex items-center justify-between px-3 py-2.5 shrink-0 border-b border-border"
         style={{
-          borderBottom: `1px solid ${BORDER}`,
           borderLeft: `3px solid ${accent}`,
         }}
       >
@@ -217,11 +209,10 @@ function KanbanColumn({ status, cards, updatingId, onCardClick }: KanbanColumnPr
       >
         {cards.length === 0 ? (
           <div
-            className="flex items-center justify-center rounded-lg border-2 border-dashed"
+            className="flex items-center justify-center rounded-lg border-2 border-dashed border-border text-muted-foreground/70"
             style={{
               minHeight: 80,
-              borderColor: isOver ? `${accent}40` : BORDER_INNER,
-              color: 'hsl(240 5% 35%)',
+              borderColor: isOver ? `${accent}40` : undefined,
               fontSize: 11,
               transition: 'all 150ms',
             }}
@@ -249,9 +240,8 @@ function KanbanOverlayCard({ content }: { content: Content }) {
   const accent = STATUS_ACCENT[content.status];
   return (
     <div
-      className="w-56 rounded-lg p-3 shadow-2xl"
+      className="w-56 rounded-lg p-3 shadow-2xl bg-secondary"
       style={{
-        background: SURFACE_HI,
         border: `1px solid ${accent}60`,
         boxShadow: `0 20px 40px rgba(0,0,0,0.6), 0 0 0 1px ${accent}30`,
         cursor: 'grabbing',
@@ -309,16 +299,16 @@ function GanttRow({ content, ganttStart, pxPerDay, totalDays, onClick }: GanttRo
 
   return (
     <div
-      className="flex items-center cursor-pointer transition-colors group"
-      style={{ height: 40, borderBottom: `1px solid ${BORDER_INNER}` }}
+      className="flex items-center cursor-pointer transition-colors group border-b border-border"
+      style={{ height: 40 }}
       onClick={() => onClick(content.id)}
       onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')}
       onMouseLeave={(e) => (e.currentTarget.style.background = '')}
     >
       {/* Title col */}
       <div
-        className="shrink-0 flex items-center gap-2 px-3 overflow-hidden"
-        style={{ width: 220, borderRight: `1px solid ${BORDER}`, height: '100%' }}
+        className="shrink-0 flex items-center gap-2 px-3 overflow-hidden border-r border-border"
+        style={{ width: 220, height: '100%' }}
       >
         <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: accent }} />
         <div className="min-w-0 flex-1">
@@ -366,10 +356,7 @@ function CalCard({ content, onClick }: { content: Content; onClick: (id: string)
   return (
     <div
       onClick={() => onClick(content.id)}
-      className="cursor-pointer rounded-md p-1.5 text-xs"
-      style={{ background: SURFACE_HI, border: `1px solid ${BORDER_INNER}` }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = 'hsl(240 15% 13%)')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = SURFACE_HI)}
+      className="cursor-pointer rounded-md p-1.5 text-xs bg-secondary border border-border hover:brightness-110"
     >
       <div className="font-medium truncate text-foreground/85 mb-0.5">{content.title}</div>
       <div className="flex items-center gap-1">
@@ -578,13 +565,11 @@ export default function CalendarPage() {
 
         {/* ═══════════════ UNIFIED TOOLBAR ═══════════════ */}
         <div
-          className="rounded-xl mb-5 overflow-hidden"
-          style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+          className="rounded-xl mb-5 overflow-hidden bg-card border border-border"
         >
           {/* Row 1: Title + View perspective switcher */}
           <div
-            className="flex items-center justify-between px-5 py-3"
-            style={{ borderBottom: `1px solid ${BORDER}` }}
+            className="flex items-center justify-between px-5 py-3 border-b border-border"
           >
             <div className="flex items-center gap-3 min-w-0">
               <h1 className="font-display text-lg font-bold text-foreground tracking-tight shrink-0">
@@ -593,8 +578,7 @@ export default function CalendarPage() {
               {/* Summary pills */}
               <div className="hidden sm:flex items-center gap-1.5">
                 <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: 'hsl(240 11% 13%)', color: 'hsl(240 5% 65%)' }}
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/65"
                 >
                   {summaryCounts.total} conteúdo{summaryCounts.total !== 1 ? 's' : ''}
                 </span>
@@ -611,8 +595,7 @@ export default function CalendarPage() {
 
             {/* View perspective switcher — always visible, always same position */}
             <div
-              className="flex items-center rounded-lg p-0.5 gap-px shrink-0"
-              style={{ background: 'hsl(240 15% 5%)', border: `1px solid ${BORDER}` }}
+              className="flex items-center rounded-lg p-0.5 gap-px shrink-0 bg-background border border-border"
             >
               {([
                 { id: 'calendar', icon: CalendarIcon, label: 'Calendário' },
@@ -622,10 +605,10 @@ export default function CalendarPage() {
                 <button
                   key={id}
                   onClick={() => setTopView(id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${topView === id ? '' : 'text-muted-foreground'}`}
                   style={{
                     background: topView === id ? 'hsl(258 82% 64%)' : 'transparent',
-                    color:      topView === id ? '#fff' : 'hsl(240 5% 52%)',
+                    color:      topView === id ? '#fff' : undefined,
                   }}
                   title={label}
                 >
@@ -688,13 +671,12 @@ export default function CalendarPage() {
               </Select>
 
               {/* Divider */}
-              <div className="h-5 w-px mx-0.5" style={{ background: BORDER }} />
+              <div className="h-5 w-px mx-0.5 bg-border" />
 
               {/* Calendar sub-view */}
               {topView === 'calendar' && (
                 <div
-                  className="flex items-center rounded-md p-0.5 gap-px"
-                  style={{ background: 'hsl(240 15% 5%)' }}
+                  className="flex items-center rounded-md p-0.5 gap-px bg-background"
                 >
                   {([
                     { id: 'month', icon: LayoutGrid, label: 'Mês'    },
@@ -704,11 +686,7 @@ export default function CalendarPage() {
                     <button
                       key={id}
                       onClick={() => setCalSubView(id)}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-all"
-                      style={{
-                        background: calSubView === id ? 'hsl(240 15% 13%)' : 'transparent',
-                        color:      calSubView === id ? 'hsl(240 5% 90%)'  : 'hsl(240 5% 45%)',
-                      }}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-all ${calSubView === id ? 'bg-secondary text-foreground/90' : 'text-muted-foreground'}`}
                     >
                       <Icon className="h-3 w-3" />
                       <span className="hidden md:inline">{label}</span>
@@ -796,8 +774,8 @@ export default function CalendarPage() {
           <>
             {/* Month */}
             {calSubView === 'month' && (
-              <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${BORDER}`, background: SURFACE }}>
-                <div className="grid grid-cols-7" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <div className="rounded-xl overflow-hidden border border-border bg-card">
+                <div className="grid grid-cols-7 border-b border-border">
                   {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d) => (
                     <div key={d} className="p-2 text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                       {d}
@@ -812,17 +790,15 @@ export default function CalendarPage() {
                     return (
                       <div
                         key={i}
-                        className="min-h-[110px] p-1.5"
+                        className="min-h-[110px] p-1.5 border-b border-r border-border"
                         style={{
-                          borderBottom: `1px solid ${BORDER_INNER}`,
-                          borderRight:  `1px solid ${BORDER_INNER}`,
-                          background:   todayDay ? 'hsl(258 82% 64% / 0.07)' : !inMonth ? 'hsl(240 15% 4%)' : undefined,
+                          background:   todayDay ? 'hsl(258 82% 64% / 0.07)' : !inMonth ? 'hsl(var(--muted) / 0.5)' : undefined,
                         }}
                       >
                         <div
                           className="text-xs font-medium mb-1"
                           style={{
-                            color: todayDay ? 'hsl(258 82% 72%)' : !inMonth ? 'hsl(240 5% 28%)' : 'hsl(240 5% 52%)',
+                            color: todayDay ? 'hsl(258 82% 72%)' : !inMonth ? 'hsl(var(--muted-foreground) / 0.4)' : 'hsl(var(--muted-foreground))',
                             fontWeight: todayDay ? 700 : undefined,
                           }}
                         >
@@ -847,18 +823,18 @@ export default function CalendarPage() {
 
             {/* Week */}
             {calSubView === 'week' && (
-              <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${BORDER}`, background: SURFACE }}>
+              <div className="rounded-xl overflow-hidden border border-border bg-card">
                 <div className="grid grid-cols-7">
                   {weekDays.map((day, i) => {
                     const dayContents = getContentsForDay(day);
                     const todayDay = isToday(day);
                     return (
-                      <div key={i} style={{ borderRight: i < 6 ? `1px solid ${BORDER_INNER}` : undefined, background: todayDay ? 'hsl(258 82% 64% / 0.06)' : undefined }}>
-                        <div className="p-3 text-center" style={{ borderBottom: `1px solid ${BORDER}` }}>
-                          <div className="text-[10px] uppercase tracking-wide" style={{ color: todayDay ? 'hsl(258 82% 72%)' : 'hsl(240 5% 42%)' }}>
+                      <div key={i} className={i < 6 ? 'border-r border-border' : ''} style={{ background: todayDay ? 'hsl(258 82% 64% / 0.06)' : undefined }}>
+                        <div className="p-3 text-center border-b border-border">
+                          <div className="text-[10px] uppercase tracking-wide" style={{ color: todayDay ? 'hsl(258 82% 72%)' : 'hsl(var(--muted-foreground))' }}>
                             {format(day, 'EEE', { locale: ptBR })}
                           </div>
-                          <div className="text-lg font-display font-semibold" style={{ color: todayDay ? 'hsl(258 82% 72%)' : 'hsl(240 5% 85%)' }}>
+                          <div className="text-lg font-display font-semibold" style={{ color: todayDay ? 'hsl(258 82% 72%)' : 'hsl(var(--foreground))' }}>
                             {format(day, 'd')}
                           </div>
                         </div>
@@ -878,7 +854,7 @@ export default function CalendarPage() {
 
             {/* List */}
             {calSubView === 'list' && (
-              <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${BORDER}`, background: SURFACE }}>
+              <div className="rounded-xl overflow-hidden border border-border bg-card">
                 {scheduled.length === 0 ? (
                   <div className="text-center py-12 text-sm text-muted-foreground">
                     Nenhum conteúdo agendado ainda.
@@ -888,8 +864,7 @@ export default function CalendarPage() {
                     {scheduled.map((c) => (
                       <div
                         key={c.id}
-                        className="flex items-center justify-between px-5 py-3.5 cursor-pointer transition-colors"
-                        style={{ borderBottom: `1px solid ${BORDER_INNER}` }}
+                        className="flex items-center justify-between px-5 py-3.5 cursor-pointer transition-colors border-b border-border"
                         onClick={() => navigate(`/contents/${c.id}`)}
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = '')}
@@ -949,18 +924,17 @@ export default function CalendarPage() {
 
         {/* ══════════════════════════════════════ GANTT ════════════════════════════════════ */}
         {!isLoading && topView === 'gantt' && (
-          <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${BORDER}`, background: SURFACE }}>
+          <div className="rounded-xl overflow-hidden border border-border bg-card">
             <div className="overflow-x-auto">
               <div style={{ minWidth: 220 + ganttDayList.length * pxPerDay }}>
 
                 {/* Header: day columns */}
                 <div
-                  className="flex items-end sticky top-0 z-10"
-                  style={{ background: 'hsl(240 15% 5%)', borderBottom: `1px solid ${BORDER}` }}
+                  className="flex items-end sticky top-0 z-10 bg-background border-b border-border"
                 >
                   <div
-                    className="shrink-0 px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
-                    style={{ width: 220, borderRight: `1px solid ${BORDER}` }}
+                    className="shrink-0 px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border"
+                    style={{ width: 220 }}
                   >
                     Conteúdo
                   </div>
@@ -977,7 +951,7 @@ export default function CalendarPage() {
                         className="shrink-0 text-center pb-1.5 pt-2"
                         style={{
                           width: pxPerDay,
-                          borderRight: `1px solid ${isMonthStart && ganttScale !== 'dia' ? BORDER : BORDER_INNER}`,
+                          borderRight: `1px solid hsl(var(--border))`,
                           background: todayDay ? 'hsl(258 82% 64% / 0.14)' : undefined,
                         }}
                       >
@@ -992,7 +966,7 @@ export default function CalendarPage() {
                         {showLabel && (
                           <div
                             className="text-[9px] font-semibold"
-                            style={{ color: todayDay ? 'hsl(258 82% 72%)' : 'hsl(240 5% 42%)' }}
+                            style={{ color: todayDay ? 'hsl(258 82% 72%)' : 'hsl(var(--muted-foreground))' }}
                           >
                             {format(day, 'd')}
                           </div>
@@ -1000,7 +974,7 @@ export default function CalendarPage() {
                         {ganttScale === 'dia' && (
                           <div
                             className="text-[8px] uppercase"
-                            style={{ color: todayDay ? 'hsl(258 82% 72%)' : 'hsl(240 5% 30%)' }}
+                            style={{ color: todayDay ? 'hsl(258 82% 72%)' : 'hsl(var(--muted-foreground) / 0.5)' }}
                           >
                             {format(day, 'EEE', { locale: ptBR }).slice(0, 3)}
                           </div>
@@ -1017,12 +991,7 @@ export default function CalendarPage() {
                     <div key={gi}>
                       {group.label && (
                         <div
-                          className="flex items-center px-3 py-1.5"
-                          style={{
-                            background: 'hsl(240 15% 5%)',
-                            borderBottom: `1px solid ${BORDER}`,
-                            borderTop: gi > 0 ? `1px solid ${BORDER}` : undefined,
-                          }}
+                          className={`flex items-center px-3 py-1.5 bg-background border-b border-border ${gi > 0 ? 'border-t' : ''}`}
                         >
                           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                             {group.label}
@@ -1032,8 +1001,8 @@ export default function CalendarPage() {
                       )}
 
                       {group.items.length === 0 ? (
-                        <div className="flex items-center px-3" style={{ height: 40, borderBottom: `1px solid ${BORDER_INNER}` }}>
-                          <div style={{ width: 220, borderRight: `1px solid ${BORDER}`, height: '100%' }} />
+                        <div className="flex items-center px-3 border-b border-border" style={{ height: 40 }}>
+                          <div className="border-r border-border" style={{ width: 220, height: '100%' }} />
                           <span className="text-xs text-muted-foreground/30 px-4">Nenhum conteúdo</span>
                         </div>
                       ) : (
@@ -1073,8 +1042,8 @@ export default function CalendarPage() {
                 {unscheduled.length > 0 && (
                   <div style={{ borderTop: `1px solid hsl(38 90% 50% / 0.25)` }}>
                     <div
-                      className="flex items-center px-3 py-1.5"
-                      style={{ background: 'hsl(38 90% 50% / 0.07)', borderBottom: `1px solid ${BORDER_INNER}` }}
+                      className="flex items-center px-3 py-1.5 border-b border-border"
+                      style={{ background: 'hsl(38 90% 50% / 0.07)' }}
                     >
                       <AlertCircle className="h-3 w-3 text-warning mr-1.5" />
                       <span className="text-[10px] font-semibold uppercase tracking-wide text-warning">
@@ -1084,15 +1053,15 @@ export default function CalendarPage() {
                     {unscheduled.map((c) => (
                       <div
                         key={c.id}
-                        className="flex items-center cursor-pointer transition-colors"
-                        style={{ height: 40, borderBottom: `1px solid ${BORDER_INNER}` }}
+                        className="flex items-center cursor-pointer transition-colors border-b border-border"
+                        style={{ height: 40 }}
                         onClick={() => navigate(`/contents/${c.id}`)}
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = '')}
                       >
                         <div
-                          className="shrink-0 flex items-center gap-2 px-3 overflow-hidden"
-                          style={{ width: 220, borderRight: `1px solid ${BORDER}`, height: '100%' }}
+                          className="shrink-0 flex items-center gap-2 px-3 overflow-hidden border-r border-border"
+                          style={{ width: 220, height: '100%' }}
                         >
                           <span className="h-1.5 w-1.5 rounded-full shrink-0 bg-warning/50" />
                           <span className="text-xs text-foreground/50 truncate">{c.title}</span>

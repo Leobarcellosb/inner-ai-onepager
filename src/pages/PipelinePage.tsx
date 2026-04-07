@@ -43,10 +43,6 @@ import { validateTransition } from '@/lib/pipeline';
 import { notifyStatusChange } from '@/lib/notifications';
 import { auditLog } from '@/lib/audit';
 
-const SURFACE    = 'hsl(240 13% 7%)';
-const SURFACE_HI = 'hsl(240 15% 10%)';
-const BORDER     = 'hsl(240 11% 13%)';
-
 const PRIORITY_DOT: Record<ContentPriority, string> = {
   low:    'hsl(240 5% 45%)',
   medium: 'hsl(217 88% 58%)',
@@ -96,8 +92,7 @@ function PipelineCard({
     scale: isDragging ? '0.95' : '1',
     cursor: isUpdating ? 'wait' : isDragging ? 'grabbing' : 'grab',
     transition: isDragging ? 'scale 100ms' : 'opacity 150ms, scale 150ms, box-shadow 150ms',
-    background: SURFACE_HI,
-    border: isDragging ? `1px solid ${accent}40` : `1px solid hsl(240 11% 11%)`,
+    border: isDragging ? `1px solid ${accent}40` : undefined,
     boxShadow: isDragging ? `0 4px 20px rgba(0,0,0,0.3)` : undefined,
   };
 
@@ -107,7 +102,7 @@ function PipelineCard({
       style={style}
       {...attributes}
       {...listeners}
-      className="rounded-lg p-2.5 flex flex-col gap-1.5 select-none group touch-none"
+      className={`rounded-lg p-2.5 flex flex-col gap-1.5 select-none group touch-none bg-secondary ${!isDragging ? 'border border-border' : ''}`}
       onClick={(e) => { e.stopPropagation(); onClick(content.id); }}
     >
       {isUpdating && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground self-end" />}
@@ -255,18 +250,17 @@ function PipelineColumn({
 
   return (
     <div
-      className="flex-shrink-0 w-48 flex flex-col rounded-xl overflow-hidden"
+      className="flex-shrink-0 w-48 flex flex-col rounded-xl overflow-hidden bg-card border border-border"
       style={{
-        border: `1px solid ${isOver ? (invalidTarget ? 'hsl(0 72% 51% / 0.5)' : accent) : BORDER}`,
-        background: SURFACE,
+        borderColor: isOver ? (invalidTarget ? 'hsl(0 72% 51% / 0.5)' : accent) : undefined,
         boxShadow: isOver && !invalidTarget ? `0 0 16px ${accent}20, inset 0 0 20px ${accent}05` : undefined,
         transition: 'border-color 150ms, box-shadow 150ms',
       }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-2.5 py-2 shrink-0"
-        style={{ borderBottom: `1px solid ${BORDER}`, borderLeft: `3px solid ${accent}` }}
+        className="flex items-center justify-between px-2.5 py-2 shrink-0 border-b border-border"
+        style={{ borderLeft: `3px solid ${accent}` }}
       >
         <span className="text-[10px] font-semibold truncate" style={{ color: accent }}>
           {STATUS_LABELS[status]}
@@ -292,11 +286,10 @@ function PipelineColumn({
       >
         {cards.length === 0 ? (
           <div
-            className="flex items-center justify-center rounded-lg border border-dashed text-[10px]"
+            className="flex items-center justify-center rounded-lg border border-dashed text-[10px] border-border text-muted-foreground/50"
             style={{
               minHeight: 60,
-              borderColor: isOver ? (invalidTarget ? 'hsl(0 72% 51% / 0.3)' : `${accent}30`) : 'hsl(240 11% 11%)',
-              color: 'hsl(240 5% 30%)',
+              borderColor: isOver ? (invalidTarget ? 'hsl(0 72% 51% / 0.3)' : `${accent}30`) : undefined,
             }}
           >
             {isOver ? (invalidTarget ? (blockReason || 'Bloqueado') : 'Soltar aqui') : '—'}
@@ -317,9 +310,8 @@ function OverlayCard({ content }: { content: Content }) {
   const accent = STATUS_ACCENT[content.status];
   return (
     <div
-      className="w-48 rounded-lg p-2.5"
+      className="w-48 rounded-lg p-2.5 bg-secondary"
       style={{
-        background: SURFACE_HI,
         border: `1px solid ${accent}`,
         boxShadow: `0 12px 32px rgba(0,0,0,0.5), 0 0 0 1px ${accent}30`,
         cursor: 'grabbing',

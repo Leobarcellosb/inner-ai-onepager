@@ -10,9 +10,6 @@ import { toast } from 'sonner';
 import { isAdmin } from '@/lib/permissions';
 import type { AppRole } from '@/types';
 
-const SURFACE = 'hsl(240 13% 7%)';
-const BORDER = 'hsl(240 11% 13%)';
-
 const ROLE_CONFIG: Record<string, { label: string; color: string }> = {
   admin:        { label: 'Admin',        color: 'hsl(258 82% 64%)' },
   operator:     { label: 'Operador',     color: 'hsl(217 88% 58%)' },
@@ -110,14 +107,13 @@ export default function UsersPage() {
             {users.map((u) => (
               <div
                 key={u.id}
-                className="rounded-xl overflow-hidden"
-                style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+                className="rounded-xl overflow-hidden bg-card border border-border"
               >
                 <div className="flex items-center justify-between px-5 py-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                      style={{ background: u.roles.includes('admin') ? 'hsl(258 82% 55%)' : 'hsl(240 11% 20%)' }}
+                      style={{ background: u.roles.includes('admin') ? 'hsl(258 82% 55%)' : 'hsl(var(--muted-foreground) / 0.3)' }}
                     >
                       {u.name?.charAt(0)?.toUpperCase() || '?'}
                     </div>

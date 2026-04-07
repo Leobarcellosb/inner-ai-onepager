@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { loadBrainContext } from "../_shared/brain-context.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
@@ -9,15 +10,16 @@ const corsHeaders = {
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_TIMEOUT_MS = 45_000;
 
-const SYSTEM_PROMPT = `Você é o estrategista de conteúdo da marca. Gere ideias de conteúdo altamente práticas, alinhadas com a estratégia da marca e o perfil do público.
+const SYSTEM_PROMPT = `Você é o estrategista de conteúdo da marca. Gere ideias que pareçam saídas de um time sênior de marketing, não de uma ferramenta genérica.
 
-REGRAS:
-- Cada ideia deve ser acionável — o time deve conseguir produzir a partir dela
-- Títulos devem ser chamativos e curtos (máx 80 caracteres)
-- Ganchos devem usar os padrões que funcionaram anteriormente
-- Ângulos devem ser únicos e não genéricos
-- Objetivos devem ser claros e mensuráveis
-- Formatos devem ser adequados à plataforma
+POSTURA:
+- Pense como um diretor criativo que conhece profundamente o público
+- Cada ideia deve atacar uma dor, desejo ou curiosidade real do ICP
+- Use os padrões que JÁ FUNCIONARAM (seção PADRÕES VALIDADOS) como base — não invente do zero
+- Se algo foi REJEITADO pelo time (seção MEMÓRIA), NÃO gere ideias similares
+- Ângulos devem ser específicos e controversos — nunca genéricos tipo "dicas de produtividade"
+- Ganchos devem parar o scroll em 2 segundos — use números, perguntas ou afirmações ousadas
+- Títulos máx 80 chars, diretos, sem clickbait vazio
 
 FORMATO DE RESPOSTA:
 Retorne APENAS um JSON array com exatamente o número de ideias solicitado. Cada ideia:
@@ -82,47 +84,8 @@ Deno.serve(async (req) => {
 
     const { data: cfg } = await supabase.from("company_config").select("*").limit(1).single();
 
-    let brandBlock = "";
-    let rulesBlock = "";
-    let learningsBlock = "";
-
-    if (cfg) {
-      const icp = cfg.icp_json as Record<string, string> | null;
-      const ed = cfg.editorial_guidelines_json as Record<string, string> | null;
-      const voice = cfg.voice_tone_json as Record<string, string> | null;
-      const rules = cfg.rules_json as Record<string, string> | null;
-      const learn = cfg.learnings_json as Record<string, string[]> | null;
-
-      // Brand context
-      const ctx: string[] = [];
-      if (icp?.persona) ctx.push(`Público-alvo: ${icp.persona}`);
-      if (icp?.pain_points) ctx.push(`Dores: ${icp.pain_points}`);
-      if (icp?.desires) ctx.push(`Desejos: ${icp.desires}`);
-      if (ed?.positioning) ctx.push(`Posicionamento: ${ed.positioning}`);
-      if (ed?.pillars) ctx.push(`Pilares de conteúdo: ${ed.pillars}`);
-      if (ed?.hook_patterns) ctx.push(`Padrões de gancho: ${ed.hook_patterns}`);
-      if (ed?.copy_style) ctx.push(`Estilo de copy: ${ed.copy_style}`);
-      if (voice?.voice) ctx.push(`Voz: ${voice.voice}`);
-      if (ctx.length > 0) brandBlock = `\nCONTEXTO DA MARCA:\n${ctx.join("\n")}`;
-
-      // Rules
-      const rls: string[] = [];
-      if (rules?.content_structure) rls.push(`Estrutura obrigatória: ${rules.content_structure}`);
-      if (rules?.always_include) rls.push(`Sempre incluir: ${rules.always_include}`);
-      if (rules?.never_include) rls.push(`Nunca incluir: ${rules.never_include}`);
-      if (voice?.forbidden_terms) rls.push(`Termos proibidos: ${voice.forbidden_terms}`);
-      if (rls.length > 0) rulesBlock = `\n\n⚠️ REGRAS:\n${rls.map((r, i) => `${i + 1}. ${r}`).join("\n")}`;
-
-      // Learnings
-      const lp: string[] = [];
-      if (learn?.hooks?.length) lp.push(`Ganchos que funcionaram: ${learn.hooks.slice(-5).join(" | ")}`);
-      if (learn?.copy_patterns?.length) lp.push(`Estruturas de copy eficazes: ${learn.copy_patterns.slice(-3).join(" | ")}`);
-      if (learn?.structures?.length) lp.push(`O que performou: ${learn.structures.slice(-3).join(" | ")}`);
-      if (learn?.ctas?.length) lp.push(`CTAs validados: ${learn.ctas.slice(-5).join(" | ")}`);
-      if (lp.length > 0) learningsBlock = `\n\nAPRENDIZADOS DE REFERÊNCIAS (inspire-se):\n${lp.join("\n")}`;
-    }
-
-    const fullSystem = `${SYSTEM_PROMPT}${brandBlock}${learningsBlock}${rulesBlock}`;
+    const brainContext = await loadBrainContext(supabase);
+    const fullSystem = `${SYSTEM_PROMPT}${brainContext}`;
 
     // Build user prompt
     const filters: string[] = [];

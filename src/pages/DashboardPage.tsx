@@ -65,7 +65,7 @@ export default function DashboardPage() {
   );
 
   const widgets = [
-    { title: 'Conteúdos', value: stats.total, icon: FileText, accent: 'hsl(240 5% 70%)', dim: 'hsl(240 11% 11%)' },
+    { title: 'Conteúdos', value: stats.total, icon: FileText, accent: 'hsl(var(--muted-foreground))', dim: 'hsl(var(--muted))' },
     { title: 'Em Revisão', value: stats.emRevisao, icon: Eye, accent: 'hsl(38 90% 50%)', dim: 'hsl(38 90% 50% / 0.1)' },
     { title: 'Aguard. Design', value: stats.aguardandoDesign, icon: Clock, accent: 'hsl(258 82% 64%)', dim: 'hsl(258 82% 64% / 0.1)' },
     { title: 'Briefs Ativos', value: stats.briefsEmAndamento, icon: PenTool, accent: 'hsl(217 88% 58%)', dim: 'hsl(217 88% 58% / 0.1)' },
@@ -89,8 +89,7 @@ export default function DashboardPage() {
           {widgets.map((w) => (
             <div
               key={w.title}
-              className="rounded-xl p-5 border border-border/80"
-              style={{ background: 'hsl(240 13% 7%)' }}
+              className="rounded-xl p-5 border border-border/80 bg-card"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -115,7 +114,7 @@ export default function DashboardPage() {
         {/* Scheduling row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Upcoming posts */}
-          <div className="rounded-xl border border-border/80 overflow-hidden" style={{ background: 'hsl(240 13% 7%)' }}>
+          <div className="rounded-xl border border-border/80 overflow-hidden bg-card">
             <div className="flex items-center gap-2 px-5 py-4 border-b border-border/60">
               <CalendarDays className="h-4 w-4 text-accent" />
               <span className="font-display font-semibold text-sm">Próximos Posts</span>
@@ -148,10 +147,9 @@ export default function DashboardPage() {
 
           {/* Unscheduled */}
           <div
-            className="rounded-xl border overflow-hidden"
+            className="rounded-xl border overflow-hidden bg-card"
             style={{
-              background: 'hsl(240 13% 7%)',
-              borderColor: unscheduledPosts.length > 0 ? 'hsl(38 90% 50% / 0.3)' : 'hsl(240 11% 13%)',
+              borderColor: unscheduledPosts.length > 0 ? 'hsl(38 90% 50% / 0.3)' : undefined,
             }}
           >
             <div className="flex items-center gap-2 px-5 py-4 border-b border-border/60">
@@ -193,7 +191,7 @@ export default function DashboardPage() {
           </div>
 
           {/* This week */}
-          <div className="rounded-xl border border-border/80 overflow-hidden" style={{ background: 'hsl(240 13% 7%)' }}>
+          <div className="rounded-xl border border-border/80 overflow-hidden bg-card">
             <div className="flex items-center gap-2 px-5 py-4 border-b border-border/60">
               <CalendarDays className="h-4 w-4 text-info" />
               <span className="font-display font-semibold text-sm">Esta Semana</span>
@@ -231,7 +229,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent activity */}
-        <div className="rounded-xl border border-border/80 overflow-hidden" style={{ background: 'hsl(240 13% 7%)' }}>
+        <div className="rounded-xl border border-border/80 overflow-hidden bg-card">
           <div className="flex items-center gap-2 px-6 py-4 border-b border-border/60">
             <Activity className="h-4 w-4 text-accent" />
             <span className="font-display font-semibold text-sm">Atividade Recente</span>

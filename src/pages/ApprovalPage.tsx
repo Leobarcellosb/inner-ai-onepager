@@ -28,9 +28,6 @@ import { recordApproval, recordRejection } from '@/lib/brain-memory';
 import { auditLog } from '@/lib/audit';
 import type { Content, ContentStatus } from '@/types';
 
-const SURFACE = 'hsl(240 13% 7%)';
-const BORDER  = 'hsl(240 11% 13%)';
-
 type ApprovalLevel = 'copy' | 'final';
 
 const LEVEL_CONFIG: Record<ApprovalLevel, {
@@ -205,8 +202,7 @@ export default function ApprovalPage() {
 
         {/* Level tabs */}
         <div
-          className="flex items-center gap-1 rounded-xl p-1"
-          style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+          className="flex items-center gap-1 rounded-xl p-1 bg-card border border-border"
         >
           {([
             { id: 'copy' as const, icon: PenLine, label: 'Copy', count: copyCount, accent: LEVEL_CONFIG.copy.accent },
@@ -246,8 +242,7 @@ export default function ApprovalPage() {
           </div>
         ) : contents.length === 0 ? (
           <div
-            className="rounded-xl p-12 text-center"
-            style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+            className="rounded-xl p-12 text-center bg-card border border-border"
           >
             <CheckCircle className="h-10 w-10 mx-auto mb-3" style={{ color: `${config.accent}30` }} />
             <p className="text-sm text-muted-foreground">
@@ -259,13 +254,11 @@ export default function ApprovalPage() {
             {contents.map((c) => (
               <div
                 key={c.id}
-                className="rounded-xl overflow-hidden"
-                style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+                className="rounded-xl overflow-hidden bg-card border border-border"
               >
                 {/* Card header */}
                 <div
-                  className="flex items-start justify-between px-5 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  style={{ borderBottom: `1px solid ${BORDER}` }}
+                  className="flex items-start justify-between px-5 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors border-b border-border"
                   onClick={() => navigate(`/contents/${c.id}`)}
                 >
                   <div className="min-w-0 flex-1">
@@ -344,7 +337,7 @@ export default function ApprovalPage() {
                   const scoreColor = r.alignment_score >= 80 ? 'hsl(142 60% 42%)' : r.alignment_score >= 50 ? 'hsl(38 90% 50%)' : 'hsl(0 72% 51%)';
                   const verdictLabel = r.verdict === 'approved' ? 'Aprovado pela IA' : r.verdict === 'needs_revision' ? 'Precisa de ajustes' : 'Reprovado';
                   return (
-                    <div className="px-5 py-3 space-y-2" style={{ borderTop: `1px solid ${BORDER}`, background: 'hsl(258 82% 64% / 0.03)' }}>
+                    <div className="px-5 py-3 space-y-2 border-t border-border" style={{ background: 'hsl(258 82% 64% / 0.03)' }}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Brain className="h-3.5 w-3.5 text-accent" />
@@ -389,8 +382,7 @@ export default function ApprovalPage() {
 
                 {/* Actions */}
                 <div
-                  className="px-5 py-3 flex items-center gap-2"
-                  style={{ borderTop: `1px solid ${BORDER}` }}
+                  className="px-5 py-3 flex items-center gap-2 border-t border-border"
                 >
                   <Button
                     size="sm"

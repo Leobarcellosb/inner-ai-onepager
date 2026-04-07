@@ -192,6 +192,17 @@ Deno.serve(async (req) => {
           }
         } catch { /* no knowledge yet */ }
 
+        // Decision memories
+        try {
+          const { data: rej } = await supabase.from("brain_memories")
+            .select("context").eq("memory_type", "rejection")
+            .order("created_at", { ascending: false }).limit(3);
+          if (rej?.length) {
+            const reasons = rej.map((r: any) => r.context?.reason).filter(Boolean);
+            if (reasons.length > 0) block += `\n\nREJEIÇÕES (evitar):\n${reasons.join("\n")}`;
+          }
+        } catch { /* no memories */ }
+
         if (block) editorialContext = block;
       }
     } catch { /* not configured yet */ }

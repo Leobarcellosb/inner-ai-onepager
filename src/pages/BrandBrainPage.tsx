@@ -15,9 +15,6 @@ import {
   Film,
 } from 'lucide-react';
 
-const SURFACE = 'hsl(240 13% 7%)';
-const BORDER = 'hsl(240 11% 13%)';
-
 interface BrainCard {
   title: string;
   description: string;
@@ -142,29 +139,28 @@ export default function BrandBrainPage() {
 
         {/* Stats bar */}
         <div
-          className="flex items-center gap-4 px-5 py-3 rounded-xl overflow-x-auto"
-          style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+          className="flex items-center gap-4 px-5 py-3 rounded-xl overflow-x-auto bg-card border border-border"
         >
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground">Referências:</span>
             <span className="text-xs font-semibold text-foreground/80">{stats.references}</span>
           </div>
-          <div className="h-4 w-px" style={{ background: BORDER }} />
+          <div className="h-4 w-px bg-border" />
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground">Analisadas:</span>
             <span className="text-xs font-semibold text-accent">{stats.analyzed}</span>
           </div>
-          <div className="h-4 w-px" style={{ background: BORDER }} />
+          <div className="h-4 w-px bg-border" />
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground">Aprendizados:</span>
             <span className="text-xs font-semibold text-warning">{stats.learnings}</span>
           </div>
-          <div className="h-4 w-px" style={{ background: BORDER }} />
+          <div className="h-4 w-px bg-border" />
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground">Playbooks:</span>
             <span className="text-xs font-semibold text-foreground/80">{stats.playbooks}</span>
           </div>
-          <div className="h-4 w-px" style={{ background: BORDER }} />
+          <div className="h-4 w-px bg-border" />
           <Badge
             className="text-[9px] ml-auto"
             style={{
@@ -183,10 +179,8 @@ export default function BrandBrainPage() {
             <div
               key={card.url}
               onClick={() => navigate(card.url)}
-              className="rounded-xl p-5 cursor-pointer transition-all hover:brightness-110 group"
+              className="rounded-xl p-5 cursor-pointer transition-all hover:brightness-110 group bg-card border border-border"
               style={{
-                background: SURFACE,
-                border: `1px solid ${BORDER}`,
                 borderLeft: `3px solid ${card.accent}`,
               }}
             >

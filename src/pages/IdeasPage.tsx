@@ -16,9 +16,6 @@ import { format as fmtDate } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
 
-const SURFACE = 'hsl(240 13% 7%)';
-const BORDER = 'hsl(240 11% 13%)';
-
 const OBJECTIVE_COLORS: Record<string, string> = {
   educar: 'hsl(217 88% 58%)',
   converter: 'hsl(142 60% 42%)',
@@ -178,8 +175,7 @@ export default function IdeasPage() {
 
         {/* Controls */}
         <div
-          className="rounded-xl p-5 space-y-4"
-          style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+          className="rounded-xl p-5 space-y-4 bg-card border border-border"
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="space-y-1.5">
@@ -248,8 +244,7 @@ export default function IdeasPage() {
               return (
                 <div
                   key={i}
-                  className="rounded-xl overflow-hidden group"
-                  style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+                  className="rounded-xl overflow-hidden group bg-card border border-border"
                 >
                   <div className="p-5 space-y-3">
                     {/* Title + badges */}
@@ -310,10 +305,9 @@ export default function IdeasPage() {
         {/* Plan calendar */}
         {ideas.length > 0 && (
           <div
-            className="rounded-xl overflow-hidden"
-            style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+            className="rounded-xl overflow-hidden bg-card border border-border"
           >
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-accent" />
                 <span className="text-sm font-semibold">Distribuir no Calendário</span>
@@ -349,7 +343,7 @@ export default function IdeasPage() {
 
             {plan.length > 0 && (
               <div>
-                <div className="divide-y" style={{ borderColor: BORDER }}>
+                <div className="divide-y divide-border">
                   {plan.map((p, i) => {
                     const objColor = OBJECTIVE_COLORS[p.objective?.toLowerCase()] ?? 'hsl(240 5% 50%)';
                     const dateObj = new Date(p.date + 'T12:00:00');
@@ -392,7 +386,7 @@ export default function IdeasPage() {
                 </div>
 
                 {/* Save plan */}
-                <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: `1px solid ${BORDER}` }}>
+                <div className="flex items-center justify-between px-5 py-3 border-t border-border">
                   <span className="text-xs text-muted-foreground">{plan.length} posts planejados</span>
                   <Button
                     size="sm"
@@ -413,8 +407,7 @@ export default function IdeasPage() {
         {/* Empty state */}
         {!loading && ideas.length === 0 && (
           <div
-            className="rounded-xl p-12 text-center"
-            style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+            className="rounded-xl p-12 text-center bg-card border border-border"
           >
             <Lightbulb className="h-10 w-10 text-warning/20 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">

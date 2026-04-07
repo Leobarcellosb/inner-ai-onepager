@@ -101,13 +101,11 @@ export default function IntelligenceDashboardPage() {
                 className={`relative rounded-xl p-6 transition-all duration-200 hover:-translate-y-0.5 ${
                   s.featured
                     ? 'border border-accent/20 hover:border-accent/40'
-                    : 'border border-border/80 hover:border-border'
+                    : 'border border-border/80 hover:border-border bg-card'
                 }`}
-                style={{
-                  background: s.featured
-                    ? 'linear-gradient(135deg, hsl(240 13% 8%) 0%, hsl(258 30% 9%) 100%)'
-                    : 'hsl(240 13% 7%)',
-                }}
+                style={s.featured ? {
+                  background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(258 30% 9%) 100%)',
+                } : undefined}
               >
                 {s.featured && (
                   <div
@@ -122,12 +120,10 @@ export default function IntelligenceDashboardPage() {
                   <div className="flex items-start gap-4">
                     {/* Icon */}
                     <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg mt-0.5"
-                      style={{
-                        background: s.featured
-                          ? 'hsl(258 82% 64% / 0.15)'
-                          : 'hsl(240 11% 11%)',
-                      }}
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg mt-0.5 ${s.featured ? '' : 'bg-muted'}`}
+                      style={s.featured ? {
+                        background: 'hsl(258 82% 64% / 0.15)',
+                      } : undefined}
                     >
                       <s.icon
                         className="h-5 w-5"

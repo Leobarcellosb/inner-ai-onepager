@@ -12,9 +12,6 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import type { KnowledgeEntry } from '@/types';
 
-const SURFACE = 'hsl(240 13% 7%)';
-const BORDER = 'hsl(240 11% 13%)';
-
 function parseDOCX(buffer: ArrayBuffer): string {
   const decoder = new TextDecoder('utf-8', { fatal: false });
   const raw = decoder.decode(new Uint8Array(buffer));
@@ -118,11 +115,11 @@ export default function KnowledgePage() {
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
-            className="rounded-xl p-6 text-center cursor-pointer transition-all"
-            style={{ background: dragOver ? 'hsl(217 88% 58% / 0.05)' : SURFACE, border: `2px dashed ${dragOver ? 'hsl(217 88% 58%)' : BORDER}` }}
+            className={`rounded-xl p-6 text-center cursor-pointer transition-all border-2 border-dashed ${dragOver ? '' : 'bg-card border-border'}`}
+            style={dragOver ? { background: 'hsl(217 88% 58% / 0.05)', borderColor: 'hsl(217 88% 58%)' } : undefined}
             onClick={() => document.getElementById('kb-file')?.click()}
           >
-            <FileText className="h-8 w-8 mx-auto mb-2" style={{ color: dragOver ? 'hsl(217 88% 58%)' : 'hsl(240 5% 30%)' }} />
+            <FileText className={`h-8 w-8 mx-auto mb-2 ${dragOver ? 'text-info' : 'text-muted-foreground/50'}`} />
             <p className="text-sm text-foreground/70">{fileName || 'Arraste ou clique — DOCX, CSV, XLSX, TXT'}</p>
             <input id="kb-file" type="file" accept=".docx,.csv,.xlsx,.xls,.txt,.json" className="hidden"
               onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }} />
@@ -145,7 +142,7 @@ export default function KnowledgePage() {
           <div className="space-y-2">
             <h2 className="text-sm font-semibold text-foreground/70">{entries.length} entrada{entries.length !== 1 ? 's' : ''} na base</h2>
             {entries.map((entry) => (
-              <div key={entry.id} className="rounded-xl overflow-hidden" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
+              <div key={entry.id} className="rounded-xl overflow-hidden bg-card border border-border">
                 <div className="flex items-start justify-between px-4 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground/90 truncate">{entry.title}</p>

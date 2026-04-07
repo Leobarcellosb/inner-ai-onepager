@@ -9,9 +9,6 @@ import { Save, Loader2, Brain, Users, MessageSquare, ShieldCheck, Sparkles, X } 
 import { toast } from 'sonner';
 import type { CompanyConfig } from '@/types';
 
-const SURFACE = 'hsl(240 13% 7%)';
-const BORDER = 'hsl(240 11% 13%)';
-
 interface ConfigSection {
   key: 'icp_json' | 'editorial_guidelines_json' | 'voice_tone_json' | 'rules_json';
   title: string;
@@ -216,12 +213,11 @@ export default function CompanyConfigPage() {
 
           return (
             <div
-              className="rounded-xl overflow-hidden"
-              style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+              className="rounded-xl overflow-hidden bg-card border border-border"
             >
               <div
-                className="flex items-center gap-3 px-5 py-4"
-                style={{ borderBottom: `1px solid ${BORDER}`, borderLeft: '3px solid hsl(258 82% 64%)' }}
+                className="flex items-center gap-3 px-5 py-4 border-b border-border"
+                style={{ borderLeft: '3px solid hsl(258 82% 64%)' }}
               >
                 <Sparkles className="h-5 w-5 text-accent" />
                 <div>
@@ -268,12 +264,11 @@ export default function CompanyConfigPage() {
         {SECTIONS.map((section) => (
           <div
             key={section.key}
-            className="rounded-xl overflow-hidden"
-            style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+            className="rounded-xl overflow-hidden bg-card border border-border"
           >
             <div
-              className="flex items-center gap-3 px-5 py-4"
-              style={{ borderBottom: `1px solid ${BORDER}`, borderLeft: `3px solid ${section.accent}` }}
+              className="flex items-center gap-3 px-5 py-4 border-b border-border"
+              style={{ borderLeft: `3px solid ${section.accent}` }}
             >
               <section.icon className="h-5 w-5" style={{ color: section.accent }} />
               <div>

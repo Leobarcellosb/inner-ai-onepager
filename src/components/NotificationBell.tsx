@@ -105,12 +105,10 @@ export function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-80 p-0 border-border/80"
-        style={{ background: 'hsl(240 13% 7%)' }}
+        className="w-80 p-0 border-border/80 bg-card"
       >
         <div
-          className="flex items-center justify-between px-4 py-3"
-          style={{ borderBottom: '1px solid hsl(240 11% 13%)' }}
+          className="flex items-center justify-between px-4 py-3 border-b border-border"
         >
           <span className="text-sm font-semibold">Notificações</span>
           {unreadCount > 0 && (
@@ -132,9 +130,8 @@ export function NotificationBell() {
               <div
                 key={n.id}
                 onClick={() => handleClick(n)}
-                className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-white/5"
+                className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-white/5 border-b border-border"
                 style={{
-                  borderBottom: '1px solid hsl(240 11% 11%)',
                   background: n.read ? undefined : 'hsl(258 82% 64% / 0.04)',
                 }}
               >

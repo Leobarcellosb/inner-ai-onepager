@@ -51,8 +51,8 @@ export function PipelineBar({ currentStatus, compact }: PipelineBarProps) {
               <div
                 className={`flex items-center justify-center rounded-full font-bold transition-all ${compact ? 'h-5 w-5 text-[8px]' : 'h-6 w-6 text-[9px]'}`}
                 style={{
-                  background: isCurrent ? accent : isDone ? accent : 'hsl(240 11% 13%)',
-                  color: isCurrent || isDone ? '#fff' : 'hsl(240 5% 35%)',
+                  background: isCurrent || isDone ? accent : 'hsl(var(--muted))',
+                  color: isCurrent || isDone ? '#fff' : 'hsl(var(--muted-foreground) / 0.7)',
                   boxShadow: isCurrent ? `0 0 12px ${accent}50` : undefined,
                 }}
               >
@@ -61,7 +61,7 @@ export function PipelineBar({ currentStatus, compact }: PipelineBarProps) {
               {!compact && (
                 <span
                   className="text-[8px] font-medium text-center leading-tight max-w-[56px] truncate"
-                  style={{ color: isCurrent ? accent : isDone ? 'hsl(240 5% 65%)' : 'hsl(240 5% 35%)' }}
+                  style={{ color: isCurrent ? accent : isDone ? 'hsl(var(--foreground) / 0.65)' : 'hsl(var(--muted-foreground) / 0.7)' }}
                 >
                   {STATUS_LABELS[status]}
                 </span>
@@ -70,7 +70,7 @@ export function PipelineBar({ currentStatus, compact }: PipelineBarProps) {
             {i < PIPELINE.length - 1 && (
               <div
                 className="flex-1 h-px mx-0.5"
-                style={{ background: i < currentIdx ? 'hsl(240 5% 40%)' : 'hsl(240 11% 13%)' }}
+                style={{ background: i < currentIdx ? 'hsl(var(--muted-foreground) / 0.5)' : 'hsl(var(--border))' }}
               />
             )}
           </div>

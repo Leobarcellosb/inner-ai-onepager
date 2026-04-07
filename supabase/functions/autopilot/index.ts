@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { loadBrainContext } from "../_shared/brain-context.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
@@ -9,25 +10,28 @@ const corsHeaders = {
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_TIMEOUT_MS = 50_000;
 
-const SYSTEM_PROMPT = `Você é o motor de autopilot de uma plataforma de marketing. Recebe o cérebro da marca (ICP, editorial, voz, regras, aprendizados, conhecimento) e gera um ciclo completo de conteúdo.
+const SYSTEM_PROMPT = `Você é o motor de autopilot de uma marca. Gere conteúdos que pareçam escritos por um copywriter sênior que conhece a marca intimamente — não por uma IA genérica.
 
-Para cada conteúdo, gere:
-1. Título atrativo (máx 80 chars)
-2. Gancho (primeira frase que captura atenção)
-3. Texto completo (copy pronta para publicação, seguindo regras de estrutura e tom)
-4. CTA claro
-5. Formato ideal (reels, carrossel, story, post_estatico)
-6. Plataforma ideal (instagram, tiktok, youtube, linkedin)
-7. Pilar editorial
-8. Prioridade (low, medium, high, urgent)
-9. Data e horário sugeridos (YYYY-MM-DD e HH:MM)
+POSTURA:
+- Cada texto deve estar PRONTO para publicação — não é rascunho
+- Use a IDENTIDADE DA MARCA para definir tom, abordagem e linguagem
+- Aplique os PADRÕES VALIDADOS como inspiração real — eles já funcionaram
+- Siga as REGRAS rigorosamente — descumprir qualquer uma invalida o conteúdo
+- Se algo foi REJEITADO na MEMÓRIA, não gere nada similar
+- Se algo foi APROVADO, replique o padrão com variações
+- Ganchos devem usar as técnicas validadas, não clichês genéricos
+- Cada conteúdo deve atacar uma dor ou desejo específico do ICP
+- Alternar pilares editoriais — nunca repetir em dias consecutivos
+- Alternar formatos — carrossel, reels, post, story em sequência
+- Horários otimizados: Instagram 10h ou 18h, LinkedIn 8h, TikTok 19h
 
-REGRAS:
-- O texto deve estar PRONTO para publicação, não ser um rascunho
-- Seguir rigorosamente a estrutura, tom e regras do cérebro
-- Distribuir os conteúdos ao longo dos dias sem repetir pilar consecutivo
-- Alternar formatos para variedade
-- Horários devem ser otimizados por plataforma
+Para cada conteúdo gere:
+1. Título (máx 80 chars, direto, sem clickbait vazio)
+2. Gancho (primeira frase — deve parar o scroll)
+3. Texto completo (copy pronta seguindo estrutura obrigatória)
+4. CTA (usando padrões de CTA da marca)
+5. Formato, plataforma, pilar, prioridade
+6. Data e horário sugeridos (YYYY-MM-DD e HH:MM)
 
 FORMATO: JSON array com objetos:
 {
@@ -91,63 +95,18 @@ Deno.serve(async (req) => {
     }
 
     // Load full brain
-    const { data: cfg } = await supabase.from("company_config").select("*").limit(1).single();
-
-    if (!cfg) {
+    const brainBlock = await loadBrainContext(supabase);
+    if (!brainBlock) {
       return new Response(JSON.stringify({ error: "Configure o Cérebro da Marca antes de usar o autopilot." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
-    const icp = cfg.icp_json as Record<string, string> | null;
-    const ed = cfg.editorial_guidelines_json as Record<string, string> | null;
-    const voice = cfg.voice_tone_json as Record<string, string> | null;
-    const rules = cfg.rules_json as Record<string, string> | null;
-    const learn = cfg.learnings_json as Record<string, string[]> | null;
-
-    const brain: string[] = [];
-    if (icp?.persona) brain.push(`ICP: ${icp.persona}`);
-    if (icp?.pain_points) brain.push(`Dores: ${icp.pain_points}`);
-    if (icp?.desires) brain.push(`Desejos: ${icp.desires}`);
-    if (ed?.positioning) brain.push(`Posicionamento: ${ed.positioning}`);
-    if (ed?.pillars) brain.push(`Pilares: ${ed.pillars}`);
-    if (ed?.hook_patterns) brain.push(`Ganchos: ${ed.hook_patterns}`);
-    if (ed?.copy_style) brain.push(`Estilo: ${ed.copy_style}`);
-    if (voice?.voice) brain.push(`Voz: ${voice.voice}`);
-
-    const rls: string[] = [];
-    if (rules?.content_structure) rls.push(`Estrutura: ${rules.content_structure}`);
-    if (rules?.always_include) rls.push(`DEVE conter: ${rules.always_include}`);
-    if (rules?.never_include) rls.push(`NÃO PODE conter: ${rules.never_include}`);
-    if (voice?.forbidden_terms) rls.push(`Banido: ${voice.forbidden_terms}`);
-    if (voice?.cta_patterns) rls.push(`CTA: ${voice.cta_patterns}`);
-
-    const lp: string[] = [];
-    if (learn?.hooks?.length) lp.push(`Ganchos validados: ${learn.hooks.slice(-5).join(" | ")}`);
-    if (learn?.copy_patterns?.length) lp.push(`Copy eficaz: ${learn.copy_patterns.slice(-3).join(" | ")}`);
-    if (learn?.ctas?.length) lp.push(`CTAs que funcionam: ${learn.ctas.slice(-5).join(" | ")}`);
-
-    // Knowledge
-    let kbBlock = "";
-    try {
-      const { data: kb } = await supabase.from("knowledge_entries")
-        .select("extracted_insights").order("created_at", { ascending: false }).limit(3);
-      if (kb) {
-        const insights = kb.flatMap((e: any) => Array.isArray(e.extracted_insights) ? e.extracted_insights : []);
-        if (insights.length > 0) kbBlock = `\nConhecimento: ${insights.slice(0, 5).join(" | ")}`;
-      }
-    } catch { /* */ }
 
     // Existing scheduled to avoid conflicts
     const { data: existing } = await supabase.from("contents")
       .select("scheduled_date, platform").not("scheduled_date", "is", null).gte("scheduled_date", startDate);
-    const conflicts = (existing ?? []).map(e => `${e.scheduled_date} (${e.platform})`).join(", ");
+    const conflicts = (existing ?? []).map((e: any) => `${e.scheduled_date} (${e.platform})`).join(", ");
+    const conflictsBlock = conflicts ? `\n\nJÁ AGENDADOS (evitar): ${conflicts}` : "";
 
-    let brainBlock = `\nMARCA:\n${brain.join("\n")}`;
-    if (rls.length > 0) brainBlock += `\n\nREGRAS:\n${rls.join("\n")}`;
-    if (lp.length > 0) brainBlock += `\n\nAPRENDIZADOS:\n${lp.join("\n")}`;
-    if (kbBlock) brainBlock += kbBlock;
-    if (conflicts) brainBlock += `\n\nJÁ AGENDADOS (evitar): ${conflicts}`;
-
-    const userPrompt = `Gere ${count} conteúdos COMPLETOS prontos para publicação a partir de ${startDate}.${brainBlock}\n\nRetorne JSON array.`;
+    const userPrompt = `Gere ${count} conteúdos COMPLETOS prontos para publicação a partir de ${startDate}.${brainBlock}${conflictsBlock}\n\nRetorne JSON array.`;
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");

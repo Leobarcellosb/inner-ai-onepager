@@ -54,6 +54,50 @@
     --warning: 38 90% 50%;
     --info: 217 88% 58%;
   }
+
+  /* ── Light mode ─────────────────────────────────────────── */
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 240 10% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+
+    --primary: 240 10% 10%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 5% 93%;
+    --secondary-foreground: 240 10% 25%;
+
+    --muted: 240 5% 93%;
+    --muted-foreground: 240 5% 40%;
+
+    --accent: 258 82% 58%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 87%;
+    --input: 240 6% 87%;
+    --ring: 258 82% 58%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 5% 40%;
+    --sidebar-primary: 240 10% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 5% 95%;
+    --sidebar-accent-foreground: 240 10% 10%;
+    --sidebar-border: 240 6% 90%;
+    --sidebar-ring: 258 82% 58%;
+
+    --success: 142 60% 38%;
+    --warning: 38 90% 45%;
+    --info: 217 88% 50%;
+  }
 }
 
 @layer base {
@@ -80,8 +124,7 @@
 
   /* Slightly elevated from card — e.g. inputs, nested panels */
   .surface-raised {
-    background-color: hsl(240 13% 10%);
-    @apply border border-border/60;
+    @apply bg-secondary border border-border/60;
   }
 
   /* Accent glow — for key interactive elements */

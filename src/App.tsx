@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { I18nProvider } from "@/lib/i18n";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -34,6 +35,7 @@ const BrandBrainPage = lazy(() => import("./pages/BrandBrainPage"));
 const KnowledgePage = lazy(() => import("./pages/KnowledgePage"));
 const AutopilotPage = lazy(() => import("./pages/AutopilotPage"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const CompanyConfigPage = lazy(() => import("./pages/CompanyConfigPage"));
 const IdeasPage = lazy(() => import("./pages/IdeasPage"));
 const StoriesPage = lazy(() => import("./pages/StoriesPage"));
@@ -62,6 +64,7 @@ function PageLoader() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+    <I18nProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -85,6 +88,7 @@ const App = () => (
               <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
               <Route path="/autopilot" element={<ProtectedRoute><AdminRoute><AutopilotPage /></AdminRoute></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute><AdminRoute><UsersPage /></AdminRoute></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               <Route path="/config" element={<ProtectedRoute><AdminRoute><CompanyConfigPage /></AdminRoute></ProtectedRoute>} />
               <Route path="/ideas" element={<ProtectedRoute><IdeasPage /></ProtectedRoute>} />
               <Route path="/stories" element={<ProtectedRoute><StoriesPage /></ProtectedRoute>} />
@@ -101,6 +105,7 @@ const App = () => (
           </ErrorBoundary>
         </BrowserRouter>
       </TooltipProvider>
+    </I18nProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { loadBrainContext } from "../_shared/brain-context.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
@@ -11,13 +12,15 @@ const GEMINI_TIMEOUT_MS = 45_000;
 
 const SYSTEM_PROMPT = `Você é o estrategista de stories da marca. Gere sequências de stories completas e prontas para execução.
 
-REGRAS:
-- Cada story deve ter um propósito claro na sequência (abertura, desenvolvimento, conversão)
-- O primeiro slide DEVE ser um gancho forte que prende atenção
-- O último slide DEVE ter um CTA claro
-- Slides intermediários devem construir tensão, entregar valor ou gerar curiosidade
-- Cada slide deve ter texto curto (máx 2 linhas) — stories são visuais
-- Incluir direção visual por slide (cor de fundo, elemento principal, estilo)
+POSTURA:
+- Stories são experiências de 15 segundos cada — cada slide compete pelo próximo tap
+- Primeiro slide DEVE usar gancho validado da seção PADRÕES — não um gancho genérico
+- Construa micro-tensão entre slides — curiosidade que obriga a continuar
+- Texto máx 2 linhas — stories são 80% visual, 20% texto
+- Direção visual deve ser específica e executável (cores, layout, elementos)
+- CTA final usa padrões da marca — não "saiba mais" genérico
+- Se algo foi REJEITADO na MEMÓRIA, evite abordagem similar
+- Cada slide tem papel narrativo: hook → tensão → valor → prova → CTA
 
 FORMATO DE RESPOSTA:
 Retorne APENAS um JSON com:
@@ -84,34 +87,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Tema é obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Fetch company brain
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
-    const { data: cfg } = await supabase.from("company_config").select("*").limit(1).single();
-
-    let brandBlock = "";
-    if (cfg) {
-      const icp = cfg.icp_json as Record<string, string> | null;
-      const ed = cfg.editorial_guidelines_json as Record<string, string> | null;
-      const voice = cfg.voice_tone_json as Record<string, string> | null;
-      const rules = cfg.rules_json as Record<string, string> | null;
-      const learn = cfg.learnings_json as Record<string, string[]> | null;
-
-      const ctx: string[] = [];
-      if (icp?.persona) ctx.push(`Público: ${icp.persona}`);
-      if (ed?.hook_patterns) ctx.push(`Ganchos: ${ed.hook_patterns}`);
-      if (ed?.copy_style) ctx.push(`Estilo: ${ed.copy_style}`);
-      if (voice?.voice) ctx.push(`Voz: ${voice.voice}`);
-      if (learn?.hooks?.length) ctx.push(`Ganchos validados: ${learn.hooks.slice(-3).join(" | ")}`);
-
-      const rls: string[] = [];
-      if (rules?.always_include) rls.push(`Incluir: ${rules.always_include}`);
-      if (rules?.never_include) rls.push(`Evitar: ${rules.never_include}`);
-      if (voice?.forbidden_terms) rls.push(`Termos banidos: ${voice.forbidden_terms}`);
-
-      if (ctx.length > 0) brandBlock += `\n\nMARCA:\n${ctx.join("\n")}`;
-      if (rls.length > 0) brandBlock += `\n\nREGRAS:\n${rls.join("\n")}`;
-    }
+    const brandBlock = await loadBrainContext(supabase);
 
     const userPrompt = `Crie uma sequência de ${slideCount} stories sobre "${topic}"${objective ? ` com objetivo de ${objective}` : ""} para ${platform}.${brandBlock}`;
 

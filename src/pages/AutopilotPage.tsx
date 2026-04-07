@@ -13,9 +13,6 @@ import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
 import { ensureScheduledDate, ensureScheduledTime } from '@/lib/pipeline';
 
-const SURFACE = 'hsl(240 13% 7%)';
-const BORDER = 'hsl(240 11% 13%)';
-
 interface GeneratedItem {
   title: string;
   hook: string;
@@ -170,7 +167,7 @@ export default function AutopilotPage() {
         {/* STEP 1: Config */}
         {step === 'config' && (
           <div className="space-y-4">
-            <div className="rounded-xl p-5 space-y-4" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
+            <div className="rounded-xl p-5 space-y-4 bg-card border border-border">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs text-muted-foreground">Quantidade</label>
@@ -190,12 +187,12 @@ export default function AutopilotPage() {
                   <div className="flex gap-2">
                     <button onClick={() => setAutoApprove(false)}
                       className="flex-1 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all"
-                      style={{ background: !autoApprove ? 'hsl(217 88% 58% / 0.12)' : 'transparent', color: !autoApprove ? 'hsl(217 88% 58%)' : 'hsl(240 5% 50%)', border: `1px solid ${!autoApprove ? 'hsl(217 88% 58% / 0.3)' : BORDER}` }}>
+                      style={{ background: !autoApprove ? 'hsl(217 88% 58% / 0.12)' : 'transparent', color: !autoApprove ? 'hsl(217 88% 58%)' : 'hsl(240 5% 50%)', border: `1px solid ${!autoApprove ? 'hsl(217 88% 58% / 0.3)' : 'hsl(var(--border))'}` }}>
                       <Shield className="h-3.5 w-3.5" />Com revisão
                     </button>
                     <button onClick={() => setAutoApprove(true)}
                       className="flex-1 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all"
-                      style={{ background: autoApprove ? 'hsl(38 90% 50% / 0.12)' : 'transparent', color: autoApprove ? 'hsl(38 90% 50%)' : 'hsl(240 5% 50%)', border: `1px solid ${autoApprove ? 'hsl(38 90% 50% / 0.3)' : BORDER}` }}>
+                      style={{ background: autoApprove ? 'hsl(38 90% 50% / 0.12)' : 'transparent', color: autoApprove ? 'hsl(38 90% 50%)' : 'hsl(240 5% 50%)', border: `1px solid ${autoApprove ? 'hsl(38 90% 50% / 0.3)' : 'hsl(var(--border))'}` }}>
                       <Zap className="h-3.5 w-3.5" />Auto-aprovar
                     </button>
                   </div>
@@ -212,7 +209,7 @@ export default function AutopilotPage() {
               </Button>
             </div>
 
-            <div className="rounded-xl p-5 space-y-3" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
+            <div className="rounded-xl p-5 space-y-3 bg-card border border-border">
               <h3 className="text-xs font-semibold text-foreground/70">Como funciona</h3>
               <div className="space-y-2 text-[11px] text-muted-foreground">
                 <p>1. O autopilot lê o <strong>Cérebro da Marca</strong></p>
@@ -234,11 +231,11 @@ export default function AutopilotPage() {
 
             <div className="space-y-2">
               {items.map((item, i) => (
-                <div key={i} className="rounded-xl overflow-hidden transition-all"
-                  style={{ background: SURFACE, border: `1px solid ${BORDER}`, opacity: item._selected ? 1 : 0.4 }}>
+                <div key={i} className="rounded-xl overflow-hidden transition-all bg-card border border-border"
+                  style={{ opacity: item._selected ? 1 : 0.4 }}>
                   <div className="flex items-start gap-3 px-4 py-3">
                     <button onClick={() => toggleItem(i)} className="mt-1 shrink-0 flex h-5 w-5 items-center justify-center rounded border transition-colors"
-                      style={{ borderColor: item._selected ? 'hsl(142 60% 42%)' : BORDER, background: item._selected ? 'hsl(142 60% 42%)' : 'transparent' }}>
+                      style={{ borderColor: item._selected ? 'hsl(142 60% 42%)' : 'hsl(var(--border))', background: item._selected ? 'hsl(142 60% 42%)' : 'transparent' }}>
                       {item._selected && <Check className="h-3 w-3 text-white" />}
                     </button>
 
@@ -271,7 +268,7 @@ export default function AutopilotPage() {
                   </div>
 
                   {item._editing && (
-                    <div className="px-4 pb-3 space-y-2" style={{ borderTop: `1px solid ${BORDER}` }}>
+                    <div className="px-4 pb-3 space-y-2 border-t border-border">
                       <div className="space-y-1 pt-2">
                         <label className="text-[9px] text-muted-foreground">Texto completo</label>
                         <Textarea value={item.full_text} onChange={(e) => updateItem(i, 'full_text', e.target.value)}
@@ -306,7 +303,7 @@ export default function AutopilotPage() {
 
         {/* STEP 3: Done */}
         {step === 'done' && (
-          <div className="rounded-xl p-12 text-center" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
+          <div className="rounded-xl p-12 text-center bg-card border border-border">
             <Check className="h-12 w-12 text-success mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-foreground mb-2">{savedCount} conteúdos criados</h2>
             <p className="text-sm text-muted-foreground mb-6">

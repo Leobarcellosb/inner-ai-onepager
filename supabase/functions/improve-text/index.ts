@@ -180,6 +180,17 @@ Deno.serve(async (req) => {
           }
         }
       } catch { /* no knowledge yet */ }
+
+      // Decision memories
+      try {
+        const { data: rej } = await supabase.from("brain_memories")
+          .select("context").eq("memory_type", "rejection")
+          .order("created_at", { ascending: false }).limit(3);
+        if (rej?.length) {
+          const reasons = rej.map((r: any) => r.context?.reason || r.context?.feedback).filter(Boolean);
+          if (reasons.length > 0) brandContext += `\n\nREJEIÇÕES RECENTES (evitar):\n${reasons.join("\n")}`;
+        }
+      } catch { /* no memories */ }
     } catch { /* not configured yet */ }
 
     const intentGuide = INTENT_PROMPTS[safeIntent];

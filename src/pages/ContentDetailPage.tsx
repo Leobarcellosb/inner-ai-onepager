@@ -309,14 +309,14 @@ export default function ContentDetailPage() {
                 <span className="text-xs text-muted-foreground">{FORMAT_LABELS[content.format as keyof typeof FORMAT_LABELS]}</span>
                 {(content as any).priority && (content as any).priority !== 'medium' && (
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold" style={{
-                    background: (content as any).priority === 'urgent' ? 'hsl(0 72% 51% / 0.12)' : (content as any).priority === 'high' ? 'hsl(38 90% 50% / 0.12)' : 'hsl(240 11% 13%)',
-                    color: (content as any).priority === 'urgent' ? 'hsl(0 72% 51%)' : (content as any).priority === 'high' ? 'hsl(38 90% 50%)' : 'hsl(240 5% 55%)',
+                    background: (content as any).priority === 'urgent' ? 'hsl(0 72% 51% / 0.12)' : (content as any).priority === 'high' ? 'hsl(38 90% 50% / 0.12)' : 'hsl(var(--muted))',
+                    color: (content as any).priority === 'urgent' ? 'hsl(0 72% 51%)' : (content as any).priority === 'high' ? 'hsl(38 90% 50%)' : 'hsl(var(--muted-foreground))',
                   }}>
                     {(content as any).priority}
                   </span>
                 )}
                 {content.source_origin && content.source_origin !== 'manual' && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'hsl(240 11% 13%)', color: 'hsl(240 5% 50%)' }}>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                     {content.source_origin}
                   </span>
                 )}
@@ -349,8 +349,7 @@ export default function ContentDetailPage() {
 
         {/* Pipeline progress + contextual guidance */}
         <div
-          className="rounded-xl overflow-hidden"
-          style={{ background: 'hsl(240 13% 7%)', border: '1px solid hsl(240 11% 13%)' }}
+          className="rounded-xl overflow-hidden bg-card border border-border"
         >
           {/* Progress bar */}
           <div className="px-5 pt-4 pb-3">
@@ -378,7 +377,7 @@ export default function ContentDetailPage() {
 
           {/* Optimization result */}
           {optimizeResult && (
-            <div className="px-5 pb-3 space-y-2" style={{ borderTop: '1px solid hsl(240 11% 13%)' }}>
+            <div className="px-5 pb-3 space-y-2 border-t border-border">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-semibold text-warning flex items-center gap-1">
                   <Zap className="h-3 w-3" /> Otimização aplicada
@@ -420,10 +419,10 @@ export default function ContentDetailPage() {
                       return (
                         <span
                           key={a}
-                          className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${!isMissing ? 'bg-muted text-muted-foreground' : ''}`}
                           style={isMissing
                             ? { background: 'hsl(38 90% 50% / 0.1)', color: 'hsl(38 90% 50%)' }
-                            : { background: 'hsl(240 11% 13%)', color: 'hsl(240 5% 55%)' }
+                            : undefined
                           }
                         >
                           {a}
@@ -456,8 +455,7 @@ export default function ContentDetailPage() {
 
           {/* Transition buttons */}
           <div
-            className="flex items-center justify-between px-5 py-3"
-            style={{ borderTop: '1px solid hsl(240 11% 13%)' }}
+            className="flex items-center justify-between px-5 py-3 border-t border-border"
           >
             {(() => {
               const prev = getPrevTransition(content.status);
@@ -594,8 +592,7 @@ export default function ContentDetailPage() {
 
             {/* Design handoff */}
             <div
-              className="rounded-lg p-4 space-y-3"
-              style={{ background: 'hsl(240 13% 7%)', border: `1px solid ${content.figma_link ? 'hsl(258 82% 64% / 0.2)' : 'hsl(240 11% 13%)'}` }}
+              className={`rounded-lg p-4 space-y-3 bg-card border ${content.figma_link ? 'border-accent/20' : 'border-border'}`}
             >
               <p className="text-xs font-semibold text-foreground/70 flex items-center gap-1.5">
                 <ExternalLink className="h-3.5 w-3.5 text-accent" />
@@ -625,8 +622,7 @@ export default function ContentDetailPage() {
 
             {/* Milestones compact */}
             <div
-              className="rounded-lg p-4 space-y-2"
-              style={{ background: 'hsl(240 13% 7%)', border: '1px solid hsl(240 11% 13%)' }}
+              className="rounded-lg p-4 space-y-2 bg-card border border-border"
             >
               <p className="text-xs font-semibold text-foreground/70">Timeline</p>
               <div className="space-y-1">
@@ -661,8 +657,7 @@ export default function ContentDetailPage() {
       {/* Carousel generator */}
       {content.format === 'carrossel' && (
         <div
-          className="rounded-xl overflow-hidden"
-          style={{ background: 'hsl(240 13% 7%)', border: '1px solid hsl(240 11% 13%)' }}
+          className="rounded-xl overflow-hidden bg-card border border-border"
         >
           <button
             onClick={() => setCarouselOpen(!carouselOpen)}
@@ -677,7 +672,7 @@ export default function ContentDetailPage() {
           </button>
 
           {carouselOpen && (
-            <div className="px-5 pb-5 space-y-4" style={{ borderTop: '1px solid hsl(240 11% 13%)' }}>
+            <div className="px-5 pb-5 space-y-4 border-t border-border">
               <div className="flex items-center gap-3 pt-3">
                 <select
                   value={carouselSlides}
@@ -706,7 +701,7 @@ export default function ContentDetailPage() {
                     };
                     const color = typeColors[slide.type] || 'hsl(240 5% 50%)';
                     return (
-                      <div key={slide.position} className="flex gap-3 p-3 rounded-lg" style={{ background: 'hsl(240 15% 10%)' }}>
+                      <div key={slide.position} className="flex gap-3 p-3 rounded-lg bg-secondary">
                         <div className="flex flex-col items-center gap-1 shrink-0 w-10">
                           <div className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: color }}>
                             {slide.position}

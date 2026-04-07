@@ -34,10 +34,6 @@ import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS } from '@/types';
 import { notifyStatusChange } from '@/lib/notifications';
 import type { Content, ContentStatus, Brief } from '@/types';
 
-const SURFACE    = 'hsl(240 13% 7%)';
-const SURFACE_HI = 'hsl(240 15% 10%)';
-const BORDER     = 'hsl(240 11% 13%)';
-
 const QUEUE_COLUMNS: { status: ContentStatus; accent: string }[] = [
   { status: 'design_queue', accent: 'hsl(258 82% 64%)' },
   { status: 'designing',         accent: 'hsl(200 85% 55%)' },
@@ -102,8 +98,6 @@ function DesignerCard({ content, brief, updatingId, onNavigate }: DesignerCardPr
     opacity: isDragging ? 0.35 : 1,
     cursor: isUpdating ? 'wait' : 'grab',
     transition: isDragging ? undefined : 'opacity 150ms',
-    background: SURFACE_HI,
-    border: `1px solid hsl(240 11% 11%)`,
   };
 
   return (
@@ -112,7 +106,7 @@ function DesignerCard({ content, brief, updatingId, onNavigate }: DesignerCardPr
       style={style}
       {...attributes}
       {...listeners}
-      className="rounded-lg select-none"
+      className="rounded-lg select-none bg-secondary border border-border"
     >
       {/* Card header */}
       <div
@@ -149,7 +143,7 @@ function DesignerCard({ content, brief, updatingId, onNavigate }: DesignerCardPr
 
       {/* Brief toggle */}
       {brief && (
-        <div style={{ borderTop: `1px solid hsl(240 11% 11%)` }}>
+        <div className="border-t border-border">
           <button
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
             className="flex items-center gap-1.5 w-full px-3 py-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
@@ -218,12 +212,12 @@ function QueueColumn({
 
   return (
     <div
-      className="flex-1 min-w-[280px] flex flex-col rounded-xl overflow-hidden"
-      style={{ border: `1px solid ${isOver ? accent + '50' : BORDER}`, background: SURFACE, transition: 'border-color 150ms' }}
+      className="flex-1 min-w-[280px] flex flex-col rounded-xl overflow-hidden bg-card border border-border"
+      style={{ borderColor: isOver ? accent + '50' : undefined, transition: 'border-color 150ms' }}
     >
       <div
-        className="flex items-center justify-between px-4 py-3 shrink-0"
-        style={{ borderBottom: `1px solid ${BORDER}`, borderLeft: `3px solid ${accent}` }}
+        className="flex items-center justify-between px-4 py-3 shrink-0 border-b border-border"
+        style={{ borderLeft: `3px solid ${accent}` }}
       >
         <span className="text-sm font-semibold" style={{ color: accent }}>
           {STATUS_LABELS[status]}
@@ -246,8 +240,8 @@ function QueueColumn({
       >
         {cards.length === 0 ? (
           <div
-            className="flex items-center justify-center rounded-lg border-2 border-dashed text-xs"
-            style={{ minHeight: 100, borderColor: isOver ? `${accent}40` : 'hsl(240 11% 11%)', color: 'hsl(240 5% 35%)' }}
+            className="flex items-center justify-center rounded-lg border-2 border-dashed text-xs border-border text-muted-foreground/70"
+            style={{ minHeight: 100, borderColor: isOver ? `${accent}40` : undefined }}
           >
             {isOver ? 'Soltar aqui' : 'Nenhum item'}
           </div>
@@ -272,9 +266,8 @@ function QueueColumn({
 function OverlayCard({ content }: { content: Content }) {
   return (
     <div
-      className="w-72 rounded-lg p-3 shadow-2xl"
+      className="w-72 rounded-lg p-3 shadow-2xl bg-secondary"
       style={{
-        background: SURFACE_HI,
         border: '1px solid hsl(258 82% 64% / 0.4)',
         boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
         cursor: 'grabbing',

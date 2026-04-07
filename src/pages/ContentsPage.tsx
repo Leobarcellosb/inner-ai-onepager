@@ -14,9 +14,6 @@ import type { Content, ContentStatus } from '@/types';
 import { STATUS_LABELS, PLATFORM_LABELS, FORMAT_LABELS, PRIORITY_LABELS } from '@/types';
 import type { ContentPriority } from '@/types';
 
-const SURFACE = 'hsl(240 13% 7%)';
-const BORDER = 'hsl(240 11% 13%)';
-
 const PIPELINE_ORDER: ContentStatus[] = ['idea', 'writing', 'copy_review', 'copy_approved', 'design_queue', 'designing', 'final_review', 'approved', 'scheduled', 'published'];
 
 const PRIORITY_DOT: Record<string, string> = {
@@ -78,8 +75,7 @@ export default function ContentsPage() {
 
         {/* Filters */}
         <div
-          className="flex items-center gap-2 flex-wrap rounded-xl px-4 py-2.5"
-          style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+          className="flex items-center gap-2 flex-wrap rounded-xl px-4 py-2.5 bg-card border border-border"
         >
           <div className="relative flex-1 min-w-[180px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -132,8 +128,7 @@ export default function ContentsPage() {
             <div className="text-center py-16 text-sm text-muted-foreground">Carregando...</div>
           ) : sorted.length === 0 ? (
             <div
-              className="rounded-xl p-12 text-center"
-              style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+              className="rounded-xl p-12 text-center bg-card border border-border"
             >
               <FileText className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">
@@ -148,8 +143,7 @@ export default function ContentsPage() {
               return (
                 <div
                   key={c.id}
-                  className="rounded-xl cursor-pointer transition-all hover:brightness-110"
-                  style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+                  className="rounded-xl cursor-pointer transition-all hover:brightness-110 bg-card border border-border"
                   onClick={() => navigate(`/contents/${c.id}`)}
                 >
                   <div className="flex items-center gap-4 px-5 py-4">

@@ -31,34 +31,34 @@ import {
 import { Button } from '@/components/ui/button';
 
 import { isAdmin, isOperator } from '@/lib/permissions';
+import { useI18n } from '@/lib/i18n';
 import type { AppRole } from '@/types';
 
 interface NavItem {
-  title: string;
+  titleKey: string;
   url: string;
   icon: React.ElementType;
-  requireAdmin?: boolean;
 }
 
 function getOverviewItems(roles: AppRole[]): NavItem[] {
   const items: NavItem[] = [
-    { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-    { title: 'Pipeline', url: '/pipeline', icon: Workflow },
-    { title: 'Planejamento', url: '/calendar', icon: CalendarDays },
+    { titleKey: 'nav.dashboard', url: '/dashboard', icon: LayoutDashboard },
+    { titleKey: 'nav.pipeline', url: '/pipeline', icon: Workflow },
+    { titleKey: 'nav.planning', url: '/calendar', icon: CalendarDays },
   ];
-  if (isAdmin(roles)) items.push({ title: 'Autopilot', url: '/autopilot', icon: Zap });
+  if (isAdmin(roles)) items.push({ titleKey: 'nav.autopilot', url: '/autopilot', icon: Zap });
   return items;
 }
 
 function getOperationItems(roles: AppRole[]): NavItem[] {
   const items: NavItem[] = [
-    { title: 'Conteúdos', url: '/contents', icon: FileText },
-    { title: 'Produção', url: '/production', icon: Palette },
+    { titleKey: 'nav.contents', url: '/contents', icon: FileText },
+    { titleKey: 'nav.production', url: '/production', icon: Palette },
   ];
   if (isOperator(roles)) {
-    items.splice(0, 0, { title: 'Importar', url: '/import', icon: Upload });
-    items.push({ title: 'Aprovação', url: '/approval', icon: CheckCircle });
-    items.push({ title: 'Briefs', url: '/briefs', icon: PenTool });
+    items.splice(0, 0, { titleKey: 'nav.import', url: '/import', icon: Upload });
+    items.push({ titleKey: 'nav.approval', url: '/approval', icon: CheckCircle });
+    items.push({ titleKey: 'nav.briefs', url: '/briefs', icon: PenTool });
   }
   return items;
 }
@@ -66,18 +66,19 @@ function getOperationItems(roles: AppRole[]): NavItem[] {
 function getIntelligenceItems(roles: AppRole[]): NavItem[] {
   const items: NavItem[] = [];
   if (isOperator(roles)) {
-    items.push({ title: 'Cérebro', url: '/brain', icon: Brain });
-    items.push({ title: 'Ideias', url: '/ideas', icon: Lightbulb });
-    items.push({ title: 'Stories', url: '/stories', icon: Film });
+    items.push({ titleKey: 'nav.brain', url: '/brain', icon: Brain });
+    items.push({ titleKey: 'nav.ideas', url: '/ideas', icon: Lightbulb });
+    items.push({ titleKey: 'nav.stories', url: '/stories', icon: Film });
   }
   if (isAdmin(roles)) {
-    items.push({ title: 'Usuários', url: '/users', icon: Settings });
+    items.push({ titleKey: 'nav.users', url: '/users', icon: Settings });
   }
   return items;
 }
 
 function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
   const location = useLocation();
+  const { t } = useI18n();
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-[0.12em] font-semibold px-3">
@@ -86,13 +87,14 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
+            const title = t(item.titleKey);
             const isActive = location.pathname.startsWith(item.url);
             return (
-              <SidebarMenuItem key={item.title}>
+              <SidebarMenuItem key={item.titleKey}>
                 <SidebarMenuButton
                   asChild
                   isActive={isActive}
-                  tooltip={item.title}
+                  tooltip={title}
                   className={
                     isActive
                       ? 'text-sidebar-primary bg-sidebar-accent font-medium'
@@ -101,7 +103,7 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
                 >
                   <Link to={item.url}>
                     <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    <span>{title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -117,6 +119,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const { signOut, profile, roles } = useAuth();
+  const { t } = useI18n();
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -136,21 +139,21 @@ export function AppSidebar() {
           )}
         </div>
 
-        <NavGroup label="Visão geral" items={getOverviewItems(roles)} />
-        <NavGroup label="Operação" items={getOperationItems(roles)} />
+        <NavGroup label={t('nav.overview')} items={getOverviewItems(roles)} />
+        <NavGroup label={t('nav.operation')} items={getOperationItems(roles)} />
         {getIntelligenceItems(roles).length > 0 && (
-          <NavGroup label="Estratégia" items={getIntelligenceItems(roles)} />
+          <NavGroup label={t('nav.strategy')} items={getIntelligenceItems(roles)} />
         )}
       </SidebarContent>
 
       <SidebarFooter className="bg-sidebar border-t border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-2">
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+          <Link to="/settings"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white hover:ring-2 hover:ring-accent/50 transition-all"
             style={{ background: 'hsl(258 82% 55%)' }}
           >
             {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
-          </div>
+          </Link>
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-sidebar-primary truncate leading-tight">

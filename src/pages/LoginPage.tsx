@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useI18n } from '@/lib/i18n';
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +40,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center p-4"
-      style={{ background: 'hsl(240 20% 3%)' }}
-    >
+    <div className="flex min-h-screen items-center justify-center p-4 bg-background">
       {/* Subtle radial glow behind the card */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -60,7 +59,7 @@ export default function LoginPage() {
             draggable={false}
           />
           <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">
-            {isSignUp ? 'Criar conta' : 'Acessar plataforma'}
+            {isSignUp ? t('auth.signup') : t('auth.login')}
           </h1>
           <p className="text-sm text-muted-foreground mt-1.5">
             Inner AI — Central de Inteligência
@@ -68,18 +67,12 @@ export default function LoginPage() {
         </div>
 
         {/* Form card */}
-        <div
-          className="rounded-xl p-7 space-y-5"
-          style={{
-            background: 'hsl(240 13% 7%)',
-            border: '1px solid hsl(240 11% 13%)',
-          }}
-        >
+        <div className="rounded-xl p-7 space-y-5 bg-card border border-border">
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Nome
+                  {t('auth.name')}
                 </Label>
                 <Input
                   value={name}
@@ -92,7 +85,7 @@ export default function LoginPage() {
             )}
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Email
+                {t('auth.email')}
               </Label>
               <Input
                 type="email"
@@ -105,7 +98,7 @@ export default function LoginPage() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Senha
+                {t('auth.password')}
               </Label>
               <Input
                 type="password"
@@ -121,13 +114,9 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full font-semibold mt-2"
-              style={{
-                background: loading ? undefined : 'hsl(258 82% 64%)',
-                color: '#fff',
-              }}
+              className={`w-full font-semibold mt-2 text-white ${loading ? '' : 'bg-accent hover:bg-accent/90'}`}
             >
-              {loading ? 'Aguarde...' : isSignUp ? 'Criar conta' : 'Entrar'}
+              {loading ? t('auth.waiting') : isSignUp ? t('auth.signup') : t('auth.login')}
             </Button>
           </form>
 
@@ -137,7 +126,7 @@ export default function LoginPage() {
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              {isSignUp ? 'Já tem conta? Entrar' : 'Não tem conta? Criar conta'}
+              {isSignUp ? t('auth.has_account') : t('auth.no_account')}
             </button>
           </div>
         </div>

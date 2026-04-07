@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { loadBrainContext } from "../_shared/brain-context.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
@@ -9,14 +10,21 @@ const corsHeaders = {
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_TIMEOUT_MS = 30_000;
 
-const SYSTEM_PROMPT = `Você é o avaliador de performance da marca. Analise conteúdos e atribua um score de potencial de performance baseado no cérebro da marca.
+const SYSTEM_PROMPT = `Você é o avaliador de performance da marca. Avalie como um revisor sênior que conhece o público, já viu milhares de posts e sabe exatamente o que funciona.
+
+POSTURA:
+- Compare o conteúdo contra a IDENTIDADE DA MARCA e o ICP — não contra padrões genéricos
+- Use a seção PADRÕES VALIDADOS como benchmark real do que já funcionou
+- Penalize conteúdo que repete erros da seção MEMÓRIA DE DECISÕES
+- Seja exigente mas justo — score 80+ só para conteúdo realmente pronto para publicar
+- Notas devem ser específicas ("gancho usa pergunta numérica como padrão validado") não genéricas ("bom gancho")
 
 Avalie 5 dimensões (0-20 pontos cada, total máx 100):
-1. ICP_ALIGNMENT: Quão bem o conteúdo fala com o público-alvo definido
-2. HOOK_STRENGTH: Força do gancho — captura atenção nos primeiros 3 segundos?
-3. STRUCTURE: Segue a estrutura definida nas regras? (gancho → tensão → solução → CTA)
-4. CLARITY: Texto claro, direto, sem enrolação, alinhado com o tom de voz
-5. PATTERN_MATCH: Quão parecido com os padrões que já funcionaram (learnings)
+1. ICP_ALIGNMENT: O texto fala a linguagem do público? Ataca uma dor/desejo real do ICP?
+2. HOOK_STRENGTH: Pararia o scroll em 2 segundos? Usa padrões de gancho validados?
+3. STRUCTURE: Segue a estrutura obrigatória das regras? Tem progressão lógica?
+4. CLARITY: Direto, sem enrolação, alinhado com a voz? Usa termos preferidos, evita banidos?
+5. PATTERN_MATCH: Quão parecido com conteúdos APROVADOS e otimizações bem-sucedidas?
 
 FORMATO: JSON exato:
 {
@@ -77,31 +85,7 @@ Deno.serve(async (req) => {
 
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
-    const { data: cfg } = await supabase.from("company_config").select("*").limit(1).single();
-
-    let brainBlock = "";
-    if (cfg) {
-      const icp = cfg.icp_json as Record<string, string> | null;
-      const ed = cfg.editorial_guidelines_json as Record<string, string> | null;
-      const voice = cfg.voice_tone_json as Record<string, string> | null;
-      const rules = cfg.rules_json as Record<string, string> | null;
-      const learn = cfg.learnings_json as Record<string, string[]> | null;
-
-      const parts: string[] = [];
-      if (icp?.persona) parts.push(`ICP: ${icp.persona}`);
-      if (icp?.pain_points) parts.push(`Dores: ${icp.pain_points}`);
-      if (ed?.positioning) parts.push(`Posicionamento: ${ed.positioning}`);
-      if (ed?.hook_patterns) parts.push(`Ganchos preferidos: ${ed.hook_patterns}`);
-      if (ed?.copy_style) parts.push(`Estilo: ${ed.copy_style}`);
-      if (voice?.voice) parts.push(`Voz: ${voice.voice}`);
-      if (rules?.content_structure) parts.push(`Estrutura: ${rules.content_structure}`);
-      if (rules?.always_include) parts.push(`Deve conter: ${rules.always_include}`);
-      if (rules?.never_include) parts.push(`Proibido: ${rules.never_include}`);
-      if (learn?.hooks?.length) parts.push(`Ganchos validados: ${learn.hooks.slice(-3).join(" | ")}`);
-      if (learn?.copy_patterns?.length) parts.push(`Copy eficaz: ${learn.copy_patterns.slice(-3).join(" | ")}`);
-
-      if (parts.length > 0) brainBlock = `\n\nCÉREBRO DA MARCA:\n${parts.join("\n")}`;
-    }
+    const brainBlock = await loadBrainContext(supabase);
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
