@@ -36,11 +36,7 @@ export function UserAvatar({ src, name, size = 'md', className = '' }: UserAvata
   const initial = name?.charAt(0)?.toUpperCase() || 'U';
   const sizeClass = SIZES[size];
 
-  const resolvedUrl = useMemo(() => {
-    const url = resolveAvatarUrl(src);
-    if (src) console.log('[AVATAR]', { raw: src, resolved: url, size });
-    return url;
-  }, [src, size]);
+  const resolvedUrl = useMemo(() => resolveAvatarUrl(src), [src]);
 
   // Reset failed state when src changes (e.g. after new upload)
   useEffect(() => { setFailed(false); }, [src]);
@@ -52,7 +48,7 @@ export function UserAvatar({ src, name, size = 'md', className = '' }: UserAvata
         src={resolvedUrl}
         alt=""
         className={`${sizeClass} shrink-0 rounded-full object-cover ${className}`}
-        onError={() => { console.warn('[AVATAR] Image failed to load:', resolvedUrl); setFailed(true); }}
+        onError={() => setFailed(true)}
       />
     );
   }

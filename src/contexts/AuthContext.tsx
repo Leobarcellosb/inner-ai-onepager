@@ -36,10 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from('user_roles').select('role').eq('user_id', userId),
     ]);
 
-    if (profileRes.data) {
-      console.log('[AUTH] Profile loaded from DB:', { avatar_url: profileRes.data.avatar_url, name: profileRes.data.name });
-      setProfile(profileRes.data as Profile);
-    }
+    if (profileRes.data) setProfile(profileRes.data as Profile);
     if (rolesRes.data) setRoles(rolesRes.data.map((r) => r.role as AppRole));
   }, []);
 
@@ -104,10 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    if (data) {
-      console.log('[AUTH] Profile refreshed:', { avatar_url: data.avatar_url });
-      setProfile(data as Profile);
-    }
+    if (data) setProfile(data as Profile);
   }, [user]);
 
   return (
