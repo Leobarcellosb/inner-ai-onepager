@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash";
 const GEMINI_TIMEOUT_MS = 30_000;
 
 const BASE_VOICE = `Você é o assistente de escrita da Inner AI. Reescreva textos seguindo rigorosamente as diretrizes da marca.

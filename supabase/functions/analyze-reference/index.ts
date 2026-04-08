@@ -9,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash";
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 const IMAGE_FETCH_TIMEOUT_MS = 12_000;
 const AI_CALL_TIMEOUT_MS = 50_000;

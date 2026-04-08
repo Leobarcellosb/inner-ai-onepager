@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash";
 const GEMINI_TIMEOUT_MS = 50_000;
 
 const SYSTEM_PROMPT = `Você é um parser de planejamento editorial. Recebe texto extraído de documentos (DOCX, PDF, planilha CSV) e transforma em itens de conteúdo estruturados.

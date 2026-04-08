@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash";
 const GEMINI_TIMEOUT_MS = 40_000;
 
 const SYSTEM_PROMPT = `Você é o monitor de qualidade estratégica de uma marca. Analise o estado atual do pipeline de conteúdo e gere alertas acionáveis.

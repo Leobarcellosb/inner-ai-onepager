@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash";
 const GEMINI_TIMEOUT_MS = 45_000;
 
 const SYSTEM_PROMPT = `Você é o estrategista de conteúdo da marca. Gere ideias que pareçam saídas de um time sênior de marketing, não de uma ferramenta genérica.

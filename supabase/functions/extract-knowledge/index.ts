@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash";
 const GEMINI_TIMEOUT_MS = 40_000;
 
 const SYSTEM_PROMPT = `Você é o processador de conhecimento de uma marca. Recebe textos de documentos (PDFs, planilhas, artigos, anotações) e extrai insights estruturados para alimentar o cérebro da marca.

@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash";
 const GEMINI_TIMEOUT_MS = 40_000;
 
 const SYSTEM_PROMPT = `Você é o revisor de qualidade da marca. Avalie conteúdos antes da aprovação comparando com o cérebro da marca: ICP, linha editorial, tom de voz, regras e padrões aprendidos.
