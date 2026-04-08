@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { ImageIcon, Plus, Search, Eye, Trash2, Power, ThumbsUp, ThumbsDown, Minus } from 'lucide-react';
+import { ImageIcon, Plus, Search, Eye, Trash2, Power, ThumbsUp, ThumbsDown, Minus, CheckSquare, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
 
@@ -61,6 +61,8 @@ export default function ReferencesPage() {
   const [newRef, setNewRef] = useState({ title: '', source_name: '', platform: 'instagram', format: 'post_estatico', caption_or_observed_copy: '', observed_hook: '', tags: '' });
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const { data: refs = [] } = useQuery<Reference[]>({
     queryKey: ['references', 'list'],
@@ -170,6 +172,68 @@ export default function ReferencesPage() {
     }
   };
 
+  const toggleSelect = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(r => r.id)));
+  };
+
+  const bulkAction = async (action: 'delete' | 'deactivate' | 'activate' | 'strong' | 'neutral' | 'weak') => {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+
+    if (action === 'delete') {
+      if (!confirm(`Excluir ${ids.length} referência${ids.length > 1 ? 's' : ''} permanentemente?`)) return;
+    }
+
+    setBulkLoading(true);
+    try {
+      if (action === 'delete') {
+        // Clean up storage images best-effort
+        const toDelete = refs.filter(r => ids.includes(r.id) && r.reference_image_url);
+        for (const r of toDelete) {
+          try {
+            const url = new URL(r.reference_image_url!);
+            const m = url.pathname.match(/\/object\/public\/reference-images\/(.+)/);
+            if (m) await supabase.storage.from('reference-images').remove([decodeURIComponent(m[1])]);
+          } catch { /* best effort */ }
+        }
+        const { error } = await supabase.from('references').delete().in('id', ids);
+        if (error) throw error;
+        toast.success(`${ids.length} referência${ids.length > 1 ? 's' : ''} excluída${ids.length > 1 ? 's' : ''}`);
+      } else if (action === 'deactivate') {
+        const { error } = await supabase.from('references').update({ is_active: false }).in('id', ids);
+        if (error) throw error;
+        toast.success(`${ids.length} desativada${ids.length > 1 ? 's' : ''}`);
+      } else if (action === 'activate') {
+        const { error } = await supabase.from('references').update({ is_active: true }).in('id', ids);
+        if (error) throw error;
+        toast.success(`${ids.length} reativada${ids.length > 1 ? 's' : ''}`);
+      } else {
+        // quality: strong | neutral | weak
+        const { error } = await supabase.from('references').update({ quality: action }).in('id', ids);
+        if (error) throw error;
+        toast.success(`${ids.length} marcada${ids.length > 1 ? 's' : ''} como ${QUALITY_CONFIG[action].label}`);
+      }
+      setSelected(new Set());
+      queryClient.invalidateQueries({ queryKey: ['references'] });
+      queryClient.invalidateQueries({ queryKey: ['brain'] });
+    } catch (err: any) {
+      toast.error(err.message || 'Erro na ação em lote');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const filtered = refs.filter(r => {
     if (search && !r.title.toLowerCase().includes(search.toLowerCase()) && !r.source_name.toLowerCase().includes(search.toLowerCase())) return false;
     if (platformFilter !== 'all' && r.platform !== platformFilter) return false;
@@ -262,6 +326,29 @@ export default function ReferencesPage() {
           </Select>
         </div>
 
+        {/* Bulk toolbar */}
+        {selected.size > 0 && (
+          <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-accent/5 border border-accent/20 animate-fade-in">
+            <button onClick={toggleSelectAll} className="text-xs text-accent font-medium hover:underline">
+              {selected.size === filtered.length ? 'Desmarcar' : 'Selecionar'} todos
+            </button>
+            <span className="text-xs text-muted-foreground ml-1">{selected.size} selecionada{selected.size > 1 ? 's' : ''}</span>
+            <div className="flex-1" />
+            <Button size="sm" variant="outline" disabled={bulkLoading} onClick={() => bulkAction('strong')} className="text-success border-success/30 hover:bg-success/10 h-7 text-[11px]">
+              <ThumbsUp className="h-3 w-3 mr-1" /> Forte
+            </Button>
+            <Button size="sm" variant="outline" disabled={bulkLoading} onClick={() => bulkAction('weak')} className="text-destructive border-destructive/30 hover:bg-destructive/10 h-7 text-[11px]">
+              <ThumbsDown className="h-3 w-3 mr-1" /> Fraco
+            </Button>
+            <Button size="sm" variant="outline" disabled={bulkLoading} onClick={() => bulkAction('deactivate')} className="text-warning border-warning/30 hover:bg-warning/10 h-7 text-[11px]">
+              <Power className="h-3 w-3 mr-1" /> Desativar
+            </Button>
+            <Button size="sm" variant="outline" disabled={bulkLoading} onClick={() => bulkAction('delete')} className="text-destructive border-destructive/30 hover:bg-destructive/10 h-7 text-[11px]">
+              <Trash2 className="h-3 w-3 mr-1" /> Excluir
+            </Button>
+          </div>
+        )}
+
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <ImageIcon className="mb-3 h-10 w-10 opacity-50" />
@@ -272,16 +359,25 @@ export default function ReferencesPage() {
             {filtered.map((r) => (
               <Link key={r.id} to={`/intelligence/references/${r.id}`}>
                 <Card className={`group overflow-hidden transition-shadow hover:shadow-md ${r.is_active ? '' : 'opacity-50'}`}>
-                  {r.reference_image_url && (
-                    <div className="aspect-video overflow-hidden bg-muted">
-                      <img src={r.reference_image_url} alt={r.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                    </div>
-                  )}
-                  {!r.reference_image_url && (
-                    <div className="flex aspect-video items-center justify-center bg-muted">
-                      <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
-                    </div>
-                  )}
+                  <div className="relative">
+                    {r.reference_image_url ? (
+                      <div className="aspect-video overflow-hidden bg-muted">
+                        <img src={r.reference_image_url} alt={r.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                      </div>
+                    ) : (
+                      <div className="flex aspect-video items-center justify-center bg-muted">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => toggleSelect(e, r.id)}
+                      className={`absolute top-2 left-2 p-0.5 rounded transition-opacity ${selected.has(r.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-70'}`}
+                    >
+                      {selected.has(r.id)
+                        ? <CheckSquare className="h-5 w-5 text-accent" />
+                        : <Square className="h-5 w-5 text-white drop-shadow" />}
+                    </button>
+                  </div>
                   <CardContent className="p-4">
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <h3 className="text-sm font-semibold truncate flex-1">{r.title}</h3>
