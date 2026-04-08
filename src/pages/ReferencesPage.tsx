@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { ImageIcon, Plus, Search, Eye, Trash2 } from 'lucide-react';
+import { ImageIcon, Plus, Search, Eye, Trash2, Power } from 'lucide-react';
 import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
 
@@ -25,6 +25,7 @@ interface Reference {
   reference_image_url: string | null;
   tags: string[];
   analysis_status: string;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -132,6 +133,20 @@ export default function ReferencesPage() {
     }
   };
 
+  const handleToggleActive = async (e: React.MouseEvent, r: Reference) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const { error } = await supabase.from('references').update({ is_active: !r.is_active }).eq('id', r.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['references'] });
+      queryClient.invalidateQueries({ queryKey: ['brain'] });
+      toast.success(r.is_active ? 'Referência desativada — não influencia mais a IA' : 'Referência reativada');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao alterar status');
+    }
+  };
+
   const filtered = refs.filter(r => {
     if (search && !r.title.toLowerCase().includes(search.toLowerCase()) && !r.source_name.toLowerCase().includes(search.toLowerCase())) return false;
     if (platformFilter !== 'all' && r.platform !== platformFilter) return false;
@@ -233,7 +248,7 @@ export default function ReferencesPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((r) => (
               <Link key={r.id} to={`/intelligence/references/${r.id}`}>
-                <Card className="group overflow-hidden transition-shadow hover:shadow-md">
+                <Card className={`group overflow-hidden transition-shadow hover:shadow-md ${r.is_active ? '' : 'opacity-50'}`}>
                   {r.reference_image_url && (
                     <div className="aspect-video overflow-hidden bg-muted">
                       <img src={r.reference_image_url} alt={r.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
@@ -250,6 +265,13 @@ export default function ReferencesPage() {
                       <Badge variant="secondary" className={STATUS_BADGE[r.analysis_status] || ''}>
                         {STATUS_LABEL[r.analysis_status] || r.analysis_status}
                       </Badge>
+                      <button
+                        onClick={(e) => handleToggleActive(e, r)}
+                        className={`shrink-0 p-1 rounded-md transition-colors opacity-0 group-hover:opacity-100 ${r.is_active ? 'text-muted-foreground/30 hover:text-warning hover:bg-warning/10' : 'text-warning hover:text-success hover:bg-success/10 opacity-100'}`}
+                        title={r.is_active ? 'Desativar' : 'Reativar'}
+                      >
+                        <Power className="h-3.5 w-3.5" />
+                      </button>
                       <button
                         onClick={(e) => handleDelete(e, r)}
                         className="shrink-0 p-1 rounded-md text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"

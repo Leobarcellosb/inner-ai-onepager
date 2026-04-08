@@ -6,7 +6,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Brain, Loader2, ImageIcon, Lightbulb, FileText, PenTool, Trash2 } from 'lucide-react';
+import { ArrowLeft, Brain, Loader2, ImageIcon, Lightbulb, FileText, PenTool, Trash2, Power } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
@@ -25,6 +25,7 @@ interface Reference {
   audience_guess: string;
   tags: string[];
   analysis_status: string;
+  is_active: boolean;
 }
 
 interface Analysis {
@@ -154,6 +155,20 @@ export default function ReferenceDetailPage() {
 
   if (!ref) return <AppLayout><div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" /></div></AppLayout>;
 
+  const handleToggleActive = async () => {
+    if (!ref) return;
+    try {
+      const { error } = await supabase.from('references').update({ is_active: !ref.is_active }).eq('id', ref.id);
+      if (error) throw error;
+      setRef({ ...ref, is_active: !ref.is_active });
+      queryClient.invalidateQueries({ queryKey: ['references'] });
+      queryClient.invalidateQueries({ queryKey: ['brain'] });
+      toast.success(ref.is_active ? 'Referência desativada' : 'Referência reativada');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao alterar status');
+    }
+  };
+
   const handleDeleteRef = async () => {
     if (!ref || !confirm(`Excluir "${ref.title}"? A análise e imagem serão removidas.`)) return;
     try {
@@ -215,6 +230,15 @@ export default function ReferenceDetailPage() {
             <Button onClick={handleAnalyze} disabled={analyzing} size="sm">
               {analyzing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Brain className="mr-1 h-3 w-3" />}
               {analyzing ? 'Analisando...' : analysis ? 'Reanalisar' : 'Analisar com IA'}
+            </Button>
+            <Button
+              onClick={handleToggleActive}
+              variant="outline"
+              size="sm"
+              className={ref.is_active ? 'text-warning border-warning/30 hover:bg-warning/10' : 'text-success border-success/30 hover:bg-success/10'}
+            >
+              <Power className="h-3.5 w-3.5 mr-1" />
+              {ref.is_active ? 'Desativar' : 'Reativar'}
             </Button>
             <Button onClick={handleDeleteRef} variant="outline" size="icon" className="h-8 w-8 text-destructive border-destructive/30 hover:bg-destructive/10">
               <Trash2 className="h-3.5 w-3.5" />
