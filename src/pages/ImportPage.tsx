@@ -272,7 +272,7 @@ export default function ImportPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight flex items-center gap-2">
             <Upload className="h-6 w-6 text-info" />

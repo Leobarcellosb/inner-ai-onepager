@@ -162,7 +162,7 @@ export default function NewContentPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate('/contents')}>
             <ArrowLeft className="h-4 w-4" />

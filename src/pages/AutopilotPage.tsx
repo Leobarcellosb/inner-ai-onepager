@@ -153,7 +153,7 @@ export default function AutopilotPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight flex items-center gap-2">
             <Zap className="h-6 w-6 text-warning" />
