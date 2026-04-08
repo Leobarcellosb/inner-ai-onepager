@@ -1,6 +1,7 @@
 // Edge function: analyze-reference — Gemini multimodal vision (direct API)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { callGemini, safeParseJson } from "../_shared/gemini.ts";
 import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 const corsHeaders = {
@@ -75,16 +76,7 @@ async function fetchImageAsBase64(imageUrl: string): Promise<{ base64: string; m
   }
 }
 
-function safeParseJson(raw: string): Record<string, string> {
-  try { return JSON.parse(raw); } catch { /* continue */ }
-  const stripped = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-  try { return JSON.parse(stripped); } catch { /* continue */ }
-  const match = stripped.match(/\{[\s\S]*\}/);
-  if (match) {
-    try { return JSON.parse(match[0]); } catch { /* give up */ }
-  }
-  throw new Error(`JSON inválido retornado pela IA: ${raw.slice(0, 300)}`);
-}
+// safeParseJson imported from _shared/gemini.ts
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -115,11 +107,14 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const apiKey = Deno.env.get("GEMINI_API_KEY");
+    console.log("[analyze] GEMINI_API_KEY present:", !!apiKey, "length:", apiKey?.length);
     if (!apiKey) throw new Error("GEMINI_API_KEY não configurada nos Supabase Secrets");
 
     // Input
     const body = await req.json();
+    console.log("[analyze] payload keys:", Object.keys(body));
     const { referenceId, title, platform, format, caption, hook, imageUrl, sourceName } = body;
+    console.log("[analyze] referenceId:", referenceId, "title:", title?.slice(0, 50), "imageUrl:", imageUrl?.slice(0, 100));
 
     const markError = async (refId: string) => {
       try { await supabase.from("references").update({ analysis_status: "erro" }).eq("id", refId); } catch { /* best effort */ }
@@ -233,47 +228,14 @@ Retorne um JSON com EXATAMENTE estes campos (todos como strings):
           : textPrompt + (hasImageUrl ? `\n\n(Nota: a imagem em ${imageUrl} não pôde ser carregada.)` : ""),
       });
 
-      // Call Gemini
-      const aiController = new AbortController();
-      const aiTimeout = setTimeout(() => aiController.abort(), AI_CALL_TIMEOUT_MS);
+      // Call Gemini with auto-retry on 503/429
+      const geminiResult = await callGemini(GEMINI_MODEL, apiKey, {
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: userParts }],
+        generationConfig: { temperature: 0.7, responseMimeType: "application/json" },
+      }, AI_CALL_TIMEOUT_MS);
 
-      let aiResponse: Response;
-      try {
-        aiResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-          {
-            method: "POST",
-            signal: aiController.signal,
-            headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-            body: JSON.stringify({
-              system_instruction: { parts: [{ text: systemPrompt }] },
-              contents: [{ role: "user", parts: userParts }],
-              generationConfig: {
-                temperature: 0.7,
-                responseMimeType: "application/json",
-              },
-            }),
-          },
-        );
-      } catch (fetchErr: any) {
-        clearTimeout(aiTimeout);
-        if (fetchErr?.name === "AbortError") throw new Error("IA não respondeu dentro do tempo limite (50s).");
-        throw fetchErr;
-      }
-      clearTimeout(aiTimeout);
-
-      if (!aiResponse.ok) {
-        const errBody = await aiResponse.text().catch(() => "");
-        console.error(`[analyze] Gemini error ${aiResponse.status}: ${errBody.slice(0, 400)}`);
-        if (aiResponse.status === 429) throw new Error("Limite de requisições atingido.");
-        throw new Error(`Gemini API error: ${aiResponse.status}`);
-      }
-
-      const aiData = await aiResponse.json();
-      const rawContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!rawContent) throw new Error("Resposta vazia da IA");
-
-      const analysisContent = safeParseJson(rawContent);
+      const analysisContent = safeParseJson(geminiResult.text as string);
 
       // Save
       const { data: savedAnalysis, error: saveErr } = await supabase

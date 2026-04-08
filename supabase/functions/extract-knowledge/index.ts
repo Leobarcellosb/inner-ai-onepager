@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { callGemini, safeParseJson } from "../_shared/gemini.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
@@ -26,16 +27,7 @@ Retorne APENAS um JSON:
   "suggested_tags": ["tag1", "tag2"]
 }`;
 
-function safeParseJson(raw: string): Record<string, unknown> {
-  try { return JSON.parse(raw); } catch { /* continue */ }
-  const stripped = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-  try { return JSON.parse(stripped); } catch { /* continue */ }
-  const match = stripped.match(/\{[\s\S]*\}/);
-  if (match) {
-    try { return JSON.parse(match[0]); } catch { /* give up */ }
-  }
-  throw new Error("JSON inválido");
-}
+// safeParseJson imported from _shared/gemini.ts
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -89,41 +81,13 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+    const geminiResult = await callGemini(GEMINI_MODEL, apiKey, {
+      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: [{ role: "user", parts: [{ text: `Documento: "${title}"\n${brandHint}\n\nTexto:\n${text}` }] }],
+      generationConfig: { temperature: 0.4, responseMimeType: "application/json" },
+    }, GEMINI_TIMEOUT_MS);
 
-    let res: Response;
-    try {
-      res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-        {
-          method: "POST",
-          signal: controller.signal,
-          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            contents: [{ role: "user", parts: [{ text: `Documento: "${title}"\n${brandHint}\n\nTexto:\n${text}` }] }],
-            generationConfig: { temperature: 0.4, responseMimeType: "application/json" },
-          }),
-        },
-      );
-    } catch (err: any) {
-      clearTimeout(timeout);
-      if (err?.name === "AbortError") throw new Error("IA não respondeu a tempo.");
-      throw err;
-    }
-    clearTimeout(timeout);
-
-    if (!res.ok) {
-      if (res.status === 429) throw new Error("Limite de requisições atingido.");
-      throw new Error(`Gemini error: ${res.status}`);
-    }
-
-    const data = await res.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawText) throw new Error("Resposta vazia da IA");
-
-    const parsed = safeParseJson(rawText);
+    const parsed = safeParseJson(geminiResult.text as string);
 
     // Save to knowledge_entries
     const insights = Array.isArray(parsed.insights) ? parsed.insights : [];
