@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Users, Shield, UserCog, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAdmin } from '@/lib/permissions';
+import { UserAvatar } from '@/components/UserAvatar';
 import type { AppRole } from '@/types';
 
 const ROLE_CONFIG: Record<string, { label: string; color: string }> = {
@@ -33,7 +34,7 @@ export default function UsersPage() {
   const { data: users = [], isLoading } = useQuery<UserWithRoles[]>({
     queryKey: ['admin', 'users'],
     queryFn: async () => {
-      const { data: profiles } = await supabase.from('profiles').select('id, name, email, created_at').order('created_at', { ascending: true });
+      const { data: profiles } = await supabase.from('profiles').select('id, name, email, avatar_url, created_at').order('created_at', { ascending: true });
       if (!profiles) return [];
 
       const { data: allRoles } = await supabase.from('user_roles').select('user_id, role');
@@ -111,12 +112,7 @@ export default function UsersPage() {
               >
                 <div className="flex items-center justify-between px-5 py-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                      style={{ background: u.roles.includes('admin') ? 'hsl(258 82% 55%)' : 'hsl(var(--muted-foreground) / 0.3)' }}
-                    >
-                      {u.name?.charAt(0)?.toUpperCase() || '?'}
-                    </div>
+                    <UserAvatar src={u.avatar_url} name={u.name} size="md" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground/90 truncate">
                         {u.name || 'Sem nome'}

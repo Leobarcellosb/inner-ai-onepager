@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 import { setTheme as applyTheme } from '@/lib/theme';
 import { AvatarCropModal } from '@/components/AvatarCropModal';
+import { UserAvatar } from '@/components/UserAvatar';
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   admin: { label: 'Administrador', color: 'hsl(258 82% 64%)' },
@@ -31,7 +32,7 @@ const THEMES = [
 ];
 
 export default function SettingsPage() {
-  const { user, profile, roles, signOut } = useAuth();
+  const { user, profile, roles, signOut, refreshProfile } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -57,6 +58,7 @@ export default function SettingsPage() {
     try {
       const { error } = await supabase.from('profiles').update({ name }).eq('id', user.id);
       if (error) throw error;
+      await refreshProfile();
       toast.success('Perfil atualizado');
     } catch (e: any) {
       toast.error(e.message || 'Erro ao salvar');
@@ -76,18 +78,37 @@ export default function SettingsPage() {
   const handleCroppedUpload = async (blob: Blob) => {
     if (!user) return;
     setUploadingAvatar(true);
+
+    // Path follows Supabase storage policy pattern: avatars/{uid}/avatar.webp
+    const filePath = `${user.id}/avatar.webp`;
+
     try {
-      const path = `avatars/${user.id}.webp`;
-      const { error: upErr } = await supabase.storage.from('reference-images').upload(path, blob, {
-        upsert: true,
-        contentType: 'image/webp',
-      });
-      if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from('reference-images').getPublicUrl(path);
+      // Step 1 — upload to dedicated "avatars" bucket
+      const { error: storageErr } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, { upsert: true, contentType: 'image/webp' });
+      if (storageErr) {
+        toast.error(`Storage: ${storageErr.message}`);
+        return;
+      }
+
+      // Step 2 — public URL + cache-bust
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
       const url = `${urlData.publicUrl}?v=${Date.now()}`;
-      await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
+
+      // Step 3 — persist URL on own profile row
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update({ avatar_url: url })
+        .eq('id', user.id);
+      if (profileErr) {
+        toast.error(`Profile: ${profileErr.message}`);
+        return;
+      }
+
       setAvatarUrl(url);
       setCropSrc(null);
+      await refreshProfile();
       toast.success('Avatar atualizado');
     } catch (e: any) {
       toast.error(e.message || 'Erro no upload');
@@ -140,16 +161,7 @@ export default function SettingsPage() {
           <div className="px-5 py-5 flex items-center gap-5 border-b border-border">
             {/* Avatar */}
             <div className="relative shrink-0">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="h-16 w-16 rounded-full object-cover" />
-              ) : (
-                <div
-                  className="flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold text-white"
-                  style={{ background: 'hsl(258 82% 55%)' }}
-                >
-                  {name?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
-              )}
+              <UserAvatar src={avatarUrl} name={name} size="lg" />
               <label className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-accent text-white cursor-pointer hover:brightness-110 transition-all">
                 {uploadingAvatar ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
                 <input type="file" accept="image/*" className="hidden"

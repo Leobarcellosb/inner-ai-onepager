@@ -1,5 +1,6 @@
 import { useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserAvatar } from '@/components/UserAvatar';
 import {
   LayoutDashboard,
   FileText,
@@ -148,11 +149,8 @@ export function AppSidebar() {
 
       <SidebarFooter className="bg-sidebar border-t border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-2">
-          <Link to="/settings"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white hover:ring-2 hover:ring-accent/50 transition-all"
-            style={{ background: 'hsl(258 82% 55%)' }}
-          >
-            {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
+          <Link to="/settings" className="hover:ring-2 hover:ring-accent/50 transition-all rounded-full">
+            <UserAvatar src={profile?.avatar_url} name={profile?.name} size="sm" />
           </Link>
           {!collapsed && (
             <div className="flex-1 min-w-0">
