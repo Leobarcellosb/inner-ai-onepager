@@ -107,10 +107,23 @@ export default function ReferencesPage() {
   const handleDelete = async (e: React.MouseEvent, r: Reference) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm(`Excluir "${r.title}"? A análise associada também será removida.`)) return;
+    if (!confirm(`Excluir "${r.title}"? A análise e imagem associadas também serão removidas.`)) return;
     try {
+      // 1. Delete DB record (cascades to reference_analyses)
       const { error } = await supabase.from('references').delete().eq('id', r.id);
       if (error) throw error;
+
+      // 2. Clean up storage image (best effort)
+      if (r.reference_image_url) {
+        try {
+          const url = new URL(r.reference_image_url);
+          const pathMatch = url.pathname.match(/\/object\/public\/reference-images\/(.+)/);
+          if (pathMatch) {
+            await supabase.storage.from('reference-images').remove([decodeURIComponent(pathMatch[1])]);
+          }
+        } catch { /* non-blocking */ }
+      }
+
       queryClient.invalidateQueries({ queryKey: ['references'] });
       queryClient.invalidateQueries({ queryKey: ['brain'] });
       toast.success('Referência excluída');

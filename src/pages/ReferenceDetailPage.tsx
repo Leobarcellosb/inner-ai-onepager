@@ -6,7 +6,8 @@ import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Brain, Loader2, ImageIcon, Lightbulb, FileText, PenTool } from 'lucide-react';
+import { ArrowLeft, Brain, Loader2, ImageIcon, Lightbulb, FileText, PenTool, Trash2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
 
@@ -84,6 +85,7 @@ const ANALYSIS_SECTIONS: { key: keyof Analysis; label: string; group: string }[]
 export default function ReferenceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [ref, setRef] = useState<Reference | null>(null);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -152,6 +154,27 @@ export default function ReferenceDetailPage() {
 
   if (!ref) return <AppLayout><div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" /></div></AppLayout>;
 
+  const handleDeleteRef = async () => {
+    if (!ref || !confirm(`Excluir "${ref.title}"? A análise e imagem serão removidas.`)) return;
+    try {
+      const { error } = await supabase.from('references').delete().eq('id', ref.id);
+      if (error) throw error;
+      if (ref.reference_image_url) {
+        try {
+          const url = new URL(ref.reference_image_url);
+          const pathMatch = url.pathname.match(/\/object\/public\/reference-images\/(.+)/);
+          if (pathMatch) await supabase.storage.from('reference-images').remove([decodeURIComponent(pathMatch[1])]);
+        } catch { /* non-blocking */ }
+      }
+      queryClient.invalidateQueries({ queryKey: ['references'] });
+      queryClient.invalidateQueries({ queryKey: ['brain'] });
+      toast.success('Referência excluída');
+      navigate('/intelligence/references');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir');
+    }
+  };
+
   const groups = ANALYSIS_SECTIONS.reduce<Record<string, typeof ANALYSIS_SECTIONS>>((acc, s) => {
     (acc[s.group] = acc[s.group] || []).push(s);
     return acc;
@@ -192,6 +215,9 @@ export default function ReferenceDetailPage() {
             <Button onClick={handleAnalyze} disabled={analyzing} size="sm">
               {analyzing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Brain className="mr-1 h-3 w-3" />}
               {analyzing ? 'Analisando...' : analysis ? 'Reanalisar' : 'Analisar com IA'}
+            </Button>
+            <Button onClick={handleDeleteRef} variant="outline" size="icon" className="h-8 w-8 text-destructive border-destructive/30 hover:bg-destructive/10">
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
