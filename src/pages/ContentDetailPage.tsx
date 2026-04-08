@@ -12,12 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, Save, ArrowLeft, PenTool, ExternalLink, Link as LinkIcon, ChevronRight, ChevronLeft, Zap, Loader2, LayoutGrid, Copy, ClipboardCopy } from 'lucide-react';
+import { Sparkles, Save, ArrowLeft, PenTool, ExternalLink, Link as LinkIcon, ChevronRight, ChevronLeft, Zap, Loader2, LayoutGrid, Copy, ClipboardCopy, Trash2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { notifyStatusChange } from '@/lib/notifications';
 import { PipelineBar, getNextTransition, getPrevTransition } from '@/components/PipelineBar';
+import { hasPermission } from '@/lib/permissions';
 import { recordOptimization } from '@/lib/brain-memory';
 import { auditLog } from '@/lib/audit';
 import { validateTransition, getMissingRequirements, getStageGuidance } from '@/lib/pipeline';
@@ -27,7 +28,7 @@ import type { Content, ContentStatus } from '@/types';
 export default function ContentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const queryClient = useQueryClient();
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(false);
@@ -280,6 +281,21 @@ export default function ContentDetailPage() {
     }
   };
 
+  const canDelete = content && (content.created_by === user?.id || hasPermission(roles, 'content:delete'));
+
+  const handleDelete = async () => {
+    if (!content || !confirm('Tem certeza que deseja excluir este conteúdo? Esta ação não pode ser desfeita.')) return;
+    try {
+      const { error } = await supabase.from('contents').delete().eq('id', content.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['contents'] });
+      toast.success('Conteúdo excluído');
+      navigate('/contents');
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao excluir');
+    }
+  };
+
   if (!content) {
     return (
       <AppLayout>
@@ -344,6 +360,11 @@ export default function ContentDetailPage() {
             <Button onClick={handleSave} disabled={loading} size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">
               <Save className="h-3.5 w-3.5 mr-1" /> {loading ? '...' : 'Salvar'}
             </Button>
+            {canDelete && (
+              <Button onClick={handleDelete} variant="outline" size="icon" className="h-8 w-8 text-destructive border-destructive/30 hover:bg-destructive/10">
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         </div>
 

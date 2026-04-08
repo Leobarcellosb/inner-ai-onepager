@@ -7,9 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, CalendarIcon, AlertCircle, FileText, Filter } from 'lucide-react';
+import { Plus, Search, CalendarIcon, AlertCircle, FileText, Filter, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { hasPermission } from '@/lib/permissions';
+import { toast } from 'sonner';
 import type { Content, ContentStatus } from '@/types';
 import { STATUS_LABELS, PLATFORM_LABELS, FORMAT_LABELS, PRIORITY_LABELS } from '@/types';
 import type { ContentPriority } from '@/types';
@@ -28,8 +33,23 @@ export default function ContentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user, roles } = useAuth();
 
   const { data: contents = [], isLoading } = useContents();
+
+  const handleDelete = async (e: React.MouseEvent, c: Content) => {
+    e.stopPropagation();
+    if (!confirm(`Excluir "${c.title}"? Esta ação não pode ser desfeita.`)) return;
+    try {
+      const { error } = await supabase.from('contents').delete().eq('id', c.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['contents'] });
+      toast.success('Conteúdo excluído');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir');
+    }
+  };
 
   const filtered = useMemo(() => contents.filter((c) => {
     if (search) {
@@ -201,6 +221,17 @@ export default function ContentsPage() {
                         <span className="text-[10px] text-warning/60">sem data</span>
                       )}
                     </div>
+
+                    {/* Delete */}
+                    {(c.created_by === user?.id || hasPermission(roles, 'content:delete')) && (
+                      <button
+                        onClick={(e) => handleDelete(e, c)}
+                        className="shrink-0 p-1.5 rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
