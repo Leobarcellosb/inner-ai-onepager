@@ -248,8 +248,12 @@ Retorne um JSON com EXATAMENTE estes campos (todos como strings):
 
       await supabase.from("references").update({ analysis_status: "analisado" }).eq("id", referenceId);
 
-      // ── Extract learnings and append to company brain ─────────────
+      // ── Extract learnings — only if reference is active and not weak ──
       try {
+        const { data: refRecord } = await supabase.from("references").select("is_active, quality").eq("id", referenceId).single();
+        if (refRecord && (!refRecord.is_active || refRecord.quality === "weak")) {
+          console.log("[analyze] Skipping learnings — reference is inactive or weak");
+        } else {
         const a = analysisContent;
         const newHook = a.main_hook ? a.main_hook.slice(0, 200) : "";
         const newCopy = a.copy_structure ? a.copy_structure.slice(0, 200) : "";
@@ -290,6 +294,7 @@ Retorne um JSON com EXATAMENTE estes campos (todos como strings):
             visual: updated.visual_patterns.length,
           });
         }
+        } // end else (active + not weak)
       } catch (learnErr: any) {
         console.warn("[analyze] Failed to save learnings:", learnErr?.message);
         // Non-blocking — analysis still succeeds

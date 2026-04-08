@@ -12,9 +12,11 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { ImageIcon, Plus, Search, Eye, Trash2, Power } from 'lucide-react';
+import { ImageIcon, Plus, Search, Eye, Trash2, Power, ThumbsUp, ThumbsDown, Minus } from 'lucide-react';
 import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
+
+type ReferenceQuality = 'strong' | 'neutral' | 'weak';
 
 interface Reference {
   id: string;
@@ -26,8 +28,15 @@ interface Reference {
   tags: string[];
   analysis_status: string;
   is_active: boolean;
+  quality: ReferenceQuality;
   created_at: string;
 }
+
+const QUALITY_CONFIG: Record<ReferenceQuality, { label: string; badge: string; icon: typeof ThumbsUp }> = {
+  strong: { label: 'Forte', badge: 'bg-success/10 text-success', icon: ThumbsUp },
+  neutral: { label: 'Neutro', badge: 'bg-muted text-muted-foreground', icon: Minus },
+  weak: { label: 'Fraco', badge: 'bg-destructive/10 text-destructive', icon: ThumbsDown },
+};
 
 const STATUS_BADGE: Record<string, string> = {
   pendente: 'bg-warning/10 text-warning',
@@ -130,6 +139,20 @@ export default function ReferencesPage() {
       toast.success('Referência excluída');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao excluir');
+    }
+  };
+
+  const handleSetQuality = async (e: React.MouseEvent, r: Reference, quality: ReferenceQuality) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (r.quality === quality) return;
+    try {
+      const { error } = await supabase.from('references').update({ quality }).eq('id', r.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['references'] });
+      toast.success(`Qualidade: ${QUALITY_CONFIG[quality].label}`);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao avaliar');
     }
   };
 
@@ -262,6 +285,11 @@ export default function ReferencesPage() {
                   <CardContent className="p-4">
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <h3 className="text-sm font-semibold truncate flex-1">{r.title}</h3>
+                      {r.quality !== 'neutral' && (
+                        <Badge variant="secondary" className={`text-[9px] ${QUALITY_CONFIG[r.quality].badge}`}>
+                          {QUALITY_CONFIG[r.quality].label}
+                        </Badge>
+                      )}
                       <Badge variant="secondary" className={STATUS_BADGE[r.analysis_status] || ''}>
                         {STATUS_LABEL[r.analysis_status] || r.analysis_status}
                       </Badge>
@@ -280,9 +308,27 @@ export default function ReferencesPage() {
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{PLATFORM_LABELS[r.platform as keyof typeof PLATFORM_LABELS] || r.platform}</span>
-                      {r.source_name && <><span>·</span><span>{r.source_name}</span></>}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <span>{PLATFORM_LABELS[r.platform as keyof typeof PLATFORM_LABELS] || r.platform}</span>
+                        {r.source_name && <><span>·</span><span>{r.source_name}</span></>}
+                      </div>
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {(['strong', 'neutral', 'weak'] as ReferenceQuality[]).map((q) => {
+                          const cfg = QUALITY_CONFIG[q];
+                          const Icon = cfg.icon;
+                          return (
+                            <button
+                              key={q}
+                              onClick={(e) => handleSetQuality(e, r, q)}
+                              className={`p-1 rounded transition-colors ${r.quality === q ? cfg.badge : 'text-muted-foreground/30 hover:text-muted-foreground'}`}
+                              title={cfg.label}
+                            >
+                              <Icon className="h-3 w-3" />
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                     {r.tags.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">

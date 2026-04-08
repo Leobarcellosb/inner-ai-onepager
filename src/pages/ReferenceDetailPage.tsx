@@ -6,7 +6,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Brain, Loader2, ImageIcon, Lightbulb, FileText, PenTool, Trash2, Power } from 'lucide-react';
+import { ArrowLeft, Brain, Loader2, ImageIcon, Lightbulb, FileText, PenTool, Trash2, Power, ThumbsUp, Minus, ThumbsDown } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
@@ -26,6 +26,7 @@ interface Reference {
   tags: string[];
   analysis_status: string;
   is_active: boolean;
+  quality: 'strong' | 'neutral' | 'weak';
 }
 
 interface Analysis {
@@ -155,6 +156,20 @@ export default function ReferenceDetailPage() {
 
   if (!ref) return <AppLayout><div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" /></div></AppLayout>;
 
+  const handleSetQuality = async (quality: 'strong' | 'neutral' | 'weak') => {
+    if (!ref || ref.quality === quality) return;
+    try {
+      const { error } = await supabase.from('references').update({ quality }).eq('id', ref.id);
+      if (error) throw error;
+      setRef({ ...ref, quality });
+      queryClient.invalidateQueries({ queryKey: ['references'] });
+      const labels = { strong: 'Forte', neutral: 'Neutro', weak: 'Fraco' };
+      toast.success(`Qualidade: ${labels[quality]}`);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao avaliar');
+    }
+  };
+
   const handleToggleActive = async () => {
     if (!ref) return;
     try {
@@ -231,6 +246,24 @@ export default function ReferenceDetailPage() {
               {analyzing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Brain className="mr-1 h-3 w-3" />}
               {analyzing ? 'Analisando...' : analysis ? 'Reanalisar' : 'Analisar com IA'}
             </Button>
+            <div className="flex items-center border border-border rounded-md overflow-hidden">
+              {([
+                { q: 'strong' as const, icon: ThumbsUp, tip: 'Forte' },
+                { q: 'neutral' as const, icon: Minus, tip: 'Neutro' },
+                { q: 'weak' as const, icon: ThumbsDown, tip: 'Fraco' },
+              ]).map(({ q, icon: Icon, tip }) => (
+                <button
+                  key={q}
+                  onClick={() => handleSetQuality(q)}
+                  className={`px-2 py-1.5 transition-colors ${ref.quality === q
+                    ? q === 'strong' ? 'bg-success/15 text-success' : q === 'weak' ? 'bg-destructive/15 text-destructive' : 'bg-muted text-muted-foreground'
+                    : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                  title={tip}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </button>
+              ))}
+            </div>
             <Button
               onClick={handleToggleActive}
               variant="outline"
