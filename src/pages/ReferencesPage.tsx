@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { ImageIcon, Plus, Search, Eye } from 'lucide-react';
+import { ImageIcon, Plus, Search, Eye, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
 
@@ -101,6 +101,21 @@ export default function ReferencesPage() {
       toast.error(e.message || 'Erro ao criar');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent, r: Reference) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`Excluir "${r.title}"? A análise associada também será removida.`)) return;
+    try {
+      const { error } = await supabase.from('references').delete().eq('id', r.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['references'] });
+      queryClient.invalidateQueries({ queryKey: ['brain'] });
+      toast.success('Referência excluída');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir');
     }
   };
 
@@ -217,11 +232,18 @@ export default function ReferencesPage() {
                     </div>
                   )}
                   <CardContent className="p-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold truncate">{r.title}</h3>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <h3 className="text-sm font-semibold truncate flex-1">{r.title}</h3>
                       <Badge variant="secondary" className={STATUS_BADGE[r.analysis_status] || ''}>
                         {STATUS_LABEL[r.analysis_status] || r.analysis_status}
                       </Badge>
+                      <button
+                        onClick={(e) => handleDelete(e, r)}
+                        className="shrink-0 p-1 rounded-md text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span>{PLATFORM_LABELS[r.platform as keyof typeof PLATFORM_LABELS] || r.platform}</span>
