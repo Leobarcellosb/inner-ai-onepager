@@ -76,10 +76,22 @@ export default function KnowledgePage() {
   const handleExtract = async () => {
     if (!rawText.trim()) { toast.error('Carregue ou cole o conteúdo.'); return; }
     setProcessing(true);
+
+    const payload = { text: rawText, title: title || 'Documento' };
+    console.log('[KNOWLEDGE] Sending to extract-knowledge:', {
+      titleLen: payload.title.length,
+      textLen: payload.text.length,
+      textPreview: payload.text.slice(0, 200),
+      hasBinary: /[\x00-\x08\x0E-\x1F]/.test(payload.text.slice(0, 500)),
+    });
+
     try {
       const { data, error } = await supabase.functions.invoke('extract-knowledge', {
-        body: { text: rawText, title: title || 'Documento' },
+        body: payload,
       });
+
+      console.log('[KNOWLEDGE] Response:', { data, error: error ? { message: error.message, name: error.name, status: (error as any).status } : null });
+
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       queryClient.invalidateQueries({ queryKey: ['knowledge'] });
