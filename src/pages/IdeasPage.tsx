@@ -239,6 +239,7 @@ export default function IdeasPage() {
         {ideas.length > 0 && (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">{ideas.length} ideias geradas — clique para criar conteúdo</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {ideas.map((idea, i) => {
               const objColor = OBJECTIVE_COLORS[idea.objective?.toLowerCase()] ?? 'hsl(240 5% 50%)';
               return (
@@ -299,6 +300,7 @@ export default function IdeasPage() {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
 

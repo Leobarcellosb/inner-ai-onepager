@@ -149,12 +149,10 @@ export default function StoriesPage() {
           </p>
         </div>
 
-        {/* Input */}
-        <div
-          className="rounded-xl p-5 space-y-4 bg-card border border-border"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+        {/* Input — wide horizontal bar */}
+        <div className="rounded-xl p-5 bg-card border border-border">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="space-y-1.5 md:col-span-1">
               <Label className="text-xs text-muted-foreground">Tema da sequência</Label>
               <Input
                 value={topic}
@@ -163,7 +161,7 @@ export default function StoriesPage() {
                 className="h-9 text-sm"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-1">
               <Label className="text-xs text-muted-foreground">Objetivo</Label>
               <Input
                 value={objective}
@@ -172,8 +170,6 @@ export default function StoriesPage() {
                 className="h-9 text-sm"
               />
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Slides</Label>
               <Select value={slideCount} onValueChange={setSlideCount}>
@@ -200,7 +196,7 @@ export default function StoriesPage() {
           <Button
             onClick={handleGenerate}
             disabled={loading}
-            className="w-full font-semibold"
+            className="w-full font-semibold mt-4"
             style={{ background: 'hsl(258 82% 64%)', color: '#fff' }}
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
@@ -223,46 +219,34 @@ export default function StoriesPage() {
               </div>
             </div>
 
-            {/* Slides */}
-            <div className="divide-y divide-border">
+            {/* Slides — responsive grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
               {sequence.slides.map((slide) => {
                 const typeColor = SLIDE_TYPE_COLORS[slide.type] ?? 'hsl(240 5% 50%)';
                 return (
-                  <div key={slide.position} className="flex gap-4 px-5 py-4">
-                    {/* Position + type */}
-                    <div className="flex flex-col items-center gap-1 shrink-0 w-12">
+                  <div key={slide.position} className="rounded-lg bg-background border border-border p-4 space-y-2">
+                    <div className="flex items-center gap-2">
                       <div
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white shrink-0"
                         style={{ background: typeColor }}
                       >
                         {slide.position}
                       </div>
-                      <span className="text-[8px] font-semibold uppercase" style={{ color: typeColor }}>
+                      <span className="text-[9px] font-semibold uppercase" style={{ color: typeColor }}>
                         {SLIDE_TYPE_LABELS[slide.type] ?? slide.type}
                       </span>
                     </div>
-
-                    {/* Content */}
-                    <div className="flex-1 space-y-1.5">
-                      <p className="text-sm text-foreground/85 leading-relaxed">{slide.text}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        <span className="text-muted-foreground/50">Visual:</span> {slide.visual_direction}
+                    <p className="text-sm text-foreground/85 leading-relaxed">{slide.text}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      <span className="text-muted-foreground/50">Visual:</span> {slide.visual_direction}
+                    </p>
+                    {slide.cta && (
+                      <p className="text-[10px] font-medium" style={{ color: SLIDE_TYPE_COLORS.cta }}>
+                        CTA: {slide.cta}
                       </p>
-                      {slide.cta && (
-                        <p className="text-[10px] font-medium" style={{ color: SLIDE_TYPE_COLORS.cta }}>
-                          CTA: {slide.cta}
-                        </p>
-                      )}
-                      {slide.note && (
-                        <p className="text-[10px] text-muted-foreground/60 italic">
-                          Nota: {slide.note}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Connector arrow */}
-                    {slide.position < sequence.total_slides && (
-                      <ArrowRight className="h-3 w-3 text-muted-foreground/20 shrink-0 self-center" />
+                    )}
+                    {slide.note && (
+                      <p className="text-[10px] text-muted-foreground/60 italic">{slide.note}</p>
                     )}
                   </div>
                 );

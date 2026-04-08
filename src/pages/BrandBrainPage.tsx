@@ -174,7 +174,7 @@ export default function BrandBrainPage() {
         </div>
 
         {/* Cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {CARDS.map((card) => (
             <div
               key={card.url}

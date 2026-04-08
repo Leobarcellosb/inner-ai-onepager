@@ -286,69 +286,73 @@ export default function ImportPage() {
         {/* STEP 1: Upload */}
         {step === 'upload' && (
           <div className="space-y-4">
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-              className={`rounded-xl p-8 text-center transition-all cursor-pointer border-2 border-dashed ${dragOver ? '' : 'bg-card border-border'}`}
-              style={dragOver ? {
-                background: 'hsl(217 88% 58% / 0.05)',
-                borderColor: 'hsl(217 88% 58%)',
-              } : undefined}
-              onClick={() => document.getElementById('file-input')?.click()}
-            >
-              <FileText className={`h-10 w-10 mx-auto mb-3 ${dragOver ? 'text-info' : 'text-muted-foreground/50'}`} />
-              <p className="text-sm text-foreground/70">
-                {fileName ? `Arquivo: ${fileName}` : 'Arraste um arquivo ou clique para selecionar'}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                PDF, DOCX, XLSX, CSV, TXT, JSON
-              </p>
-              <input
-                id="file-input"
-                type="file"
-                accept=".pdf,.xlsx,.xls,.csv,.docx,.txt,.json"
-                className="hidden"
-                onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
-              />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Drop zone */}
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                className={`rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer border-2 border-dashed min-h-[220px] ${dragOver ? '' : 'bg-card border-border'}`}
+                style={dragOver ? {
+                  background: 'hsl(217 88% 58% / 0.05)',
+                  borderColor: 'hsl(217 88% 58%)',
+                } : undefined}
+                onClick={() => document.getElementById('file-input')?.click()}
+              >
+                <FileText className={`h-10 w-10 mb-3 ${dragOver ? 'text-info' : 'text-muted-foreground/50'}`} />
+                <p className="text-sm text-foreground/70">
+                  {fileName ? `Arquivo: ${fileName}` : 'Arraste um arquivo ou clique para selecionar'}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  PDF, DOCX, XLSX, CSV, TXT, JSON
+                </p>
+                <input
+                  id="file-input"
+                  type="file"
+                  accept=".pdf,.xlsx,.xls,.csv,.docx,.txt,.json"
+                  className="hidden"
+                  onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
+                />
+              </div>
+
+              {/* Text area */}
+              <div className="space-y-2 flex flex-col">
+                <p className="text-xs text-muted-foreground">Ou cole diretamente:</p>
+                <Textarea
+                  value={rawText}
+                  onChange={(e) => setRawText(e.target.value)}
+                  placeholder={'Cole o planejamento aqui...\n\nEx:\nSegunda 10h - Instagram Carrossel: 5 dicas de IA\nTerça 18h - LinkedIn Post: Case de sucesso'}
+                  className="flex-1 min-h-[180px] text-sm resize-y"
+                />
+                {rawText && (
+                  <Badge variant="outline" className="text-[10px] self-start">{rawText.length} caracteres extraídos</Badge>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Ou cole diretamente:</p>
-              <Textarea
-                value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-                placeholder={'Cole o planejamento aqui...\n\nEx:\nSegunda 10h - Instagram Carrossel: 5 dicas de IA\nTerça 18h - LinkedIn Post: Case de sucesso'}
-                className="min-h-[120px] text-sm resize-y"
-              />
+            {/* Pre-approved toggle + action */}
+            <div className="flex items-center justify-between gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={preApproved}
+                  onChange={(e) => setPreApproved(e.target.checked)}
+                  className="h-4 w-4 rounded border-border accent-accent"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Copy pré-aprovada — enviar direto para fila de design
+                </span>
+              </label>
+              <Button
+                onClick={handleParse}
+                disabled={parsing || !rawText.trim()}
+                className="font-semibold px-8"
+                style={{ background: 'hsl(258 82% 64%)', color: '#fff' }}
+              >
+                {parsing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                {parsing ? 'Extraindo com IA...' : 'Extrair conteúdos'}
+              </Button>
             </div>
-
-            {rawText && (
-              <Badge variant="outline" className="text-[10px]">{rawText.length} caracteres extraídos</Badge>
-            )}
-
-            {/* Pre-approved toggle */}
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={preApproved}
-                onChange={(e) => setPreApproved(e.target.checked)}
-                className="h-4 w-4 rounded border-border accent-accent"
-              />
-              <span className="text-xs text-muted-foreground">
-                Copy pré-aprovada — enviar direto para fila de design
-              </span>
-            </label>
-
-            <Button
-              onClick={handleParse}
-              disabled={parsing || !rawText.trim()}
-              className="w-full font-semibold"
-              style={{ background: 'hsl(258 82% 64%)', color: '#fff' }}
-            >
-              {parsing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
-              {parsing ? 'Extraindo com IA...' : 'Extrair conteúdos'}
-            </Button>
           </div>
         )}
 
@@ -375,7 +379,7 @@ export default function ImportPage() {
               </Button>
             </div>
 
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {items.map((item, i) => (
                 <div
                   key={i}
