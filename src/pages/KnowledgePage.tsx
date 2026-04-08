@@ -10,14 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { BookOpen, Upload, Loader2, Sparkles, Trash2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import mammoth from 'mammoth';
 import type { KnowledgeEntry } from '@/types';
-
-function parseDOCX(buffer: ArrayBuffer): string {
-  const decoder = new TextDecoder('utf-8', { fatal: false });
-  const raw = decoder.decode(new Uint8Array(buffer));
-  const parts = raw.match(/<w:t[^>]*>([^<]+)<\/w:t>/g);
-  return parts ? parts.map(t => t.replace(/<[^>]+>/g, '')).join(' ') : raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-}
 
 function parseXLSX(buffer: ArrayBuffer): string {
   const wb = XLSX.read(buffer, { type: 'array' });
@@ -58,7 +52,7 @@ export default function KnowledgePage() {
       let text = '';
       if (ext === 'csv' || ext === 'txt') text = await file.text();
       else if (ext === 'xlsx' || ext === 'xls') text = parseXLSX(await file.arrayBuffer());
-      else if (ext === 'docx') text = parseDOCX(await file.arrayBuffer());
+      else if (ext === 'docx') { const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() }); text = result.value; }
       else if (ext === 'json') text = await file.text();
       else text = await file.text();
       if (text.trim().length < 20) { toast.error('Conteúdo muito curto.'); return; }

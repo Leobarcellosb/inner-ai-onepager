@@ -25,6 +25,7 @@ import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS } from '@/types';
 import type { ContentStatus } from '@/types';
 import * as XLSX from 'xlsx';
 import * as pdfjsLib from 'pdfjs-dist';
+import mammoth from 'mammoth';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
@@ -81,15 +82,9 @@ function parseXLSX(buffer: ArrayBuffer): string {
   return rows.join('\n');
 }
 
-function parseDOCX(buffer: ArrayBuffer): string {
-  const uint8 = new Uint8Array(buffer);
-  const decoder = new TextDecoder('utf-8', { fatal: false });
-  const raw = decoder.decode(uint8);
-  const textParts = raw.match(/<w:t[^>]*>([^<]+)<\/w:t>/g);
-  if (textParts) {
-    return textParts.map(t => t.replace(/<[^>]+>/g, '')).join(' ');
-  }
-  return raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 15000);
+async function parseDOCX(buffer: ArrayBuffer): Promise<string> {
+  const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+  return result.value;
 }
 
 async function parsePDF(buffer: ArrayBuffer): Promise<string> {
@@ -144,7 +139,7 @@ export default function ImportPage() {
         text = parseXLSX(buffer);
       } else if (ext === 'docx') {
         const buffer = await file.arrayBuffer();
-        text = parseDOCX(buffer);
+        text = await parseDOCX(buffer);
       } else if (ext === 'json') {
         text = await file.text();
       } else {
