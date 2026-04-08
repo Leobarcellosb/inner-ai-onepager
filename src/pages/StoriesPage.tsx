@@ -220,7 +220,7 @@ export default function StoriesPage() {
             </div>
 
             {/* Slides — responsive grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 p-4">
               {sequence.slides.map((slide) => {
                 const typeColor = SLIDE_TYPE_COLORS[slide.type] ?? 'hsl(240 5% 50%)';
                 return (
