@@ -146,6 +146,10 @@ export default function ImportPage() {
         text = await file.text();
       }
 
+      if (/[\x00-\x08\x0E-\x1F]/.test(text.slice(0, 500))) {
+        toast.error('Formato não suportado ou arquivo corrompido.');
+        return;
+      }
       if (text.trim().length < 10) {
         toast.error('Não foi possível extrair conteúdo do arquivo.');
         return;
@@ -154,7 +158,7 @@ export default function ImportPage() {
       setRawText(text.slice(0, 15000));
       toast.success(`"${file.name}" carregado — ${text.length} caracteres`);
     } catch {
-      toast.error('Erro ao ler arquivo.');
+      toast.error('Erro ao ler arquivo — verifique o formato.');
     }
   }, []);
 

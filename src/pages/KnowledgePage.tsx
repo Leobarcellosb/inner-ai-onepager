@@ -55,10 +55,17 @@ export default function KnowledgePage() {
       else if (ext === 'docx') { const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() }); text = result.value; }
       else if (ext === 'json') text = await file.text();
       else text = await file.text();
-      if (text.trim().length < 20) { toast.error('Conteúdo muito curto.'); return; }
+      // Guard against binary content leaking through
+      if (/[\x00-\x08\x0E-\x1F]/.test(text.slice(0, 500))) {
+        toast.error('Formato não suportado ou arquivo corrompido.');
+        return;
+      }
+      if (text.trim().length < 20) { toast.error('Conteúdo muito curto para processar.'); return; }
       setRawText(text.slice(0, 15000));
       toast.success(`"${file.name}" carregado`);
-    } catch { toast.error('Erro ao ler arquivo.'); }
+    } catch {
+      toast.error('Erro ao ler arquivo — verifique o formato.');
+    }
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
