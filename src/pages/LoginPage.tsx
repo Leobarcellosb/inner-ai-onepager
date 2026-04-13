@@ -8,12 +8,10 @@ import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 
 export default function LoginPage() {
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -21,20 +19,11 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    if (isSignUp) {
-      const { error } = await signUp(email, password, name);
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success('Conta criada! Verifique seu email para confirmar.');
-      }
+    const { error } = await signIn(email, password);
+    if (error) {
+      toast.error('Email ou senha incorretos.');
     } else {
-      const { error } = await signIn(email, password);
-      if (error) {
-        toast.error('Email ou senha incorretos.');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     }
     setLoading(false);
   };
@@ -59,7 +48,7 @@ export default function LoginPage() {
             draggable={false}
           />
           <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">
-            {isSignUp ? t('auth.signup') : t('auth.login')}
+            {t('auth.login')}
           </h1>
           <p className="text-sm text-muted-foreground mt-1.5">
             Inner AI — Central de Inteligência
@@ -69,20 +58,6 @@ export default function LoginPage() {
         {/* Form card */}
         <div className="rounded-xl p-7 space-y-5 bg-card border border-border">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {isSignUp && (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {t('auth.name')}
-                </Label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Seu nome"
-                  required={isSignUp}
-                  className="bg-background border-border/60 focus:border-accent/50"
-                />
-              </div>
-            )}
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 {t('auth.email')}
@@ -116,19 +91,9 @@ export default function LoginPage() {
               disabled={loading}
               className={`w-full font-semibold mt-2 text-white ${loading ? '' : 'bg-accent hover:bg-accent/90'}`}
             >
-              {loading ? t('auth.waiting') : isSignUp ? t('auth.signup') : t('auth.login')}
+              {loading ? t('auth.waiting') : t('auth.login')}
             </Button>
           </form>
-
-          <div className="text-center pt-1">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {isSignUp ? t('auth.has_account') : t('auth.no_account')}
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -5,7 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Shield, UserCog, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Users, Shield, UserCog, Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAdmin } from '@/lib/permissions';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -30,6 +33,11 @@ export default function UsersPage() {
   const { user, roles } = useAuth();
   const queryClient = useQueryClient();
   const [updating, setUpdating] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newRole, setNewRole] = useState('operator');
+  const [creating, setCreating] = useState(false);
 
   const { data: users = [], isLoading } = useQuery<UserWithRoles[]>({
     queryKey: ['admin', 'users'],
@@ -76,6 +84,25 @@ export default function UsersPage() {
     }
   };
 
+  const handleCreateUser = async () => {
+    if (!newEmail.trim() || !newName.trim()) { toast.error('Nome e email obrigatórios.'); return; }
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: { email: newEmail.trim(), name: newName.trim(), password: '123456', role: newRole },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Usuário criado! Senha provisória: 123456`);
+      setNewEmail(''); setNewName(''); setNewRole('operator'); setShowCreate(false);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao criar usuário');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   if (!isAdmin(roles)) {
     return (
       <AppLayout>
@@ -89,15 +116,54 @@ export default function UsersPage() {
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="h-6 w-6 text-accent" />
-            Gestão de Usuários
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gerencie roles e permissões do time
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Users className="h-6 w-6 text-accent" />
+              Gestão de Usuários
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Gerencie roles e permissões do time
+            </p>
+          </div>
+          <Button onClick={() => setShowCreate(!showCreate)} className="bg-accent text-white hover:bg-accent/90">
+            <Plus className="h-4 w-4 mr-2" /> Criar Usuário
+          </Button>
         </div>
+
+        {showCreate && (
+          <div className="rounded-xl p-5 bg-card border border-border space-y-3 animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Nome</Label>
+                <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome do usuário" className="h-9 text-sm" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="email@empresa.com" className="h-9 text-sm" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Role</Label>
+                <Select value={newRole} onValueChange={setNewRole}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="operator">Operador</SelectItem>
+                    <SelectItem value="social_media">Social Media</SelectItem>
+                    <SelectItem value="designer">Designer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground">Senha provisória: <span className="font-mono text-foreground/70">123456</span> — o usuário deve trocar no primeiro acesso</p>
+              <Button onClick={handleCreateUser} disabled={creating} size="sm" className="bg-accent text-white hover:bg-accent/90">
+                {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
+                {creating ? 'Criando...' : 'Criar'}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
