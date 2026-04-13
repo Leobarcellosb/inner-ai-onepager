@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -54,9 +54,20 @@ const queryClient = new QueryClient({
 });
 
 function PageLoader() {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setSlow(true), 8000);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background gap-3">
       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      {slow && (
+        <button onClick={() => window.location.reload()} className="text-xs text-accent hover:underline">
+          Carregamento lento — clique para recarregar
+        </button>
+      )}
     </div>
   );
 }

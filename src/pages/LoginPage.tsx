@@ -18,14 +18,18 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    const { error } = await signIn(email, password);
-    if (error) {
-      toast.error('Email ou senha incorretos.');
-    } else {
-      navigate('/dashboard');
+    try {
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast.error('Email ou senha incorretos.');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch {
+      toast.error('Erro de conexão. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

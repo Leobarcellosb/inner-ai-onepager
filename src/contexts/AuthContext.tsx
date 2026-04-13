@@ -18,6 +18,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const AUTH_TIMEOUT_MS = 10_000;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -31,13 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (fetchedForRef.current === userId) return;
     fetchedForRef.current = userId;
 
-    const [profileRes, rolesRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('user_roles').select('role').eq('user_id', userId),
-    ]);
+    try {
+      const [profileRes, rolesRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).single(),
+        supabase.from('user_roles').select('role').eq('user_id', userId),
+      ]);
 
-    if (profileRes.data) setProfile(profileRes.data as Profile);
-    if (rolesRes.data) setRoles(rolesRes.data.map((r) => r.role as AppRole));
+      if (profileRes.data) setProfile(profileRes.data as Profile);
+      if (rolesRes.data) setRoles(rolesRes.data.map((r) => r.role as AppRole));
+    } catch (err) {
+      console.error('[AUTH] Failed to load user data:', err);
+      // Clear ref so retry is possible on next auth event
+      fetchedForRef.current = null;
+    }
   }, []);
 
   const clearUserData = useCallback(() => {
@@ -47,20 +55,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Get initial session (no DB calls until we have a user)
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        loadUserData(s.user.id).finally(() => setLoading(false));
-      } else {
+    let mounted = true;
+
+    // Safety timeout — never stay loading forever
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('[AUTH] Bootstrap timeout — forcing loading=false');
         setLoading(false);
       }
-    });
+    }, AUTH_TIMEOUT_MS);
+
+    // Get initial session
+    supabase.auth.getSession()
+      .then(({ data: { session: s } }) => {
+        if (!mounted) return;
+        setSession(s);
+        setUser(s?.user ?? null);
+        if (s?.user) {
+          return loadUserData(s.user.id);
+        }
+      })
+      .catch((err) => {
+        console.error('[AUTH] getSession error:', err);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+        clearTimeout(timeout);
+      });
 
     // Listen for auth changes (login/logout/token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, s) => {
+        if (!mounted) return;
         setSession(s);
         setUser(s?.user ?? null);
         if (s?.user) {
@@ -71,7 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, [loadUserData, clearUserData]);
 
   const signIn = async (email: string, password: string) => {
@@ -100,8 +130,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    if (data) setProfile(data as Profile);
+    try {
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (data) setProfile(data as Profile);
+    } catch (err) {
+      console.error('[AUTH] refreshProfile error:', err);
+    }
   }, [user]);
 
   return (
