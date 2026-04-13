@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Shield, UserCog, Loader2, Plus } from 'lucide-react';
+import { Users, Shield, UserCog, Loader2, Plus, Power, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAdmin } from '@/lib/permissions';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -79,6 +79,26 @@ export default function UsersPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     } catch (e: any) {
       toast.error(e.message || 'Erro ao atualizar role');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleManageUser = async (targetUserId: string, action: 'deactivate' | 'activate' | 'delete', userName: string) => {
+    if (action === 'delete' && !confirm(`Excluir "${userName}" permanentemente? Esta ação não pode ser desfeita.`)) return;
+    if (action === 'deactivate' && !confirm(`Desativar "${userName}"? O usuário não conseguirá mais fazer login.`)) return;
+    setUpdating(targetUserId);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-user', {
+        body: { action, targetUserId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const msgs = { deactivate: 'Usuário desativado', activate: 'Usuário reativado', delete: 'Usuário excluído' };
+      toast.success(msgs[action]);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao gerenciar usuário');
     } finally {
       setUpdating(null);
     }
@@ -208,7 +228,7 @@ export default function UsersPage() {
                       );
                     })}
 
-                    {/* Add role buttons */}
+                    {/* Add role + manage buttons */}
                     {updating === u.id ? (
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     ) : (
@@ -230,6 +250,24 @@ export default function UsersPage() {
                           >
                             <UserCog className="h-3.5 w-3.5" />
                           </button>
+                        )}
+                        {u.id !== user?.id && (
+                          <>
+                            <button
+                              onClick={() => handleManageUser(u.id, 'deactivate', u.name || u.email)}
+                              className="p-1 rounded hover:bg-warning/10 text-muted-foreground/40 hover:text-warning"
+                              title="Desativar usuário"
+                            >
+                              <Power className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleManageUser(u.id, 'delete', u.name || u.email)}
+                              className="p-1 rounded hover:bg-destructive/10 text-muted-foreground/40 hover:text-destructive"
+                              title="Excluir usuário"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </>
                         )}
                       </div>
                     )}
