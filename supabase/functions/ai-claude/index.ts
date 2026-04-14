@@ -94,8 +94,8 @@ function buildRequest(fn: string, payload: Record<string, unknown>) {
     "generate-stories": () => ({
       model: "claude-sonnet-4-6",
       maxTokens: 2000,
-      systemPrompt: `${brainContext}\n\nGere stories sequenciais para Instagram. Retorne APENAS JSON: { stories: [{ order: number, text: string, cta?: string }] }`,
-      userMessage: `Tema: ${payload.topic}\nQuantidade: ${payload.count ?? 5}`,
+      systemPrompt: `${brainContext}\n\nGere uma sequência de stories para Instagram. Retorne APENAS JSON: { sequence: { sequence_title: string, objective: string, total_slides: number, slides: [{ position: number, type: "hook"|"value"|"tension"|"proof"|"cta", text: string, visual_direction: string, cta: string|null, note: string|null }] } }`,
+      userMessage: `Tema: ${payload.topic}\nQuantidade de slides: ${payload.count ?? 5}`,
     }),
 
     "generate-brief": () => ({
