@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { callAIClaude } from '@/lib/ai';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -173,13 +174,11 @@ export default function ImportPage() {
     if (!rawText.trim()) { toast.error('Carregue ou cole o conteúdo primeiro.'); return; }
     setParsing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('parse-import', {
-        body: { text: rawText, reference_date: new Date().toISOString().slice(0, 10) },
+      const result = await callAIClaude<{ items?: Record<string, string>[]; notes?: string }>('parse-import', {
+        text: rawText, reference_date: new Date().toISOString().slice(0, 10),
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
 
-      const parsed: ImportItem[] = (data.items ?? []).map((item: Record<string, string>) => {
+      const parsed: ImportItem[] = (result.items ?? []).map((item: Record<string, string>) => {
         const base = {
           title: item.title || 'Sem título',
           date: item.date || null,
@@ -195,7 +194,7 @@ export default function ImportPage() {
       });
 
       setItems(parsed);
-      setNotes(data.notes ?? '');
+      setNotes(result.notes ?? '');
       setStep('review');
       toast.success(`${parsed.length} itens extraídos`);
     } catch (e: any) {

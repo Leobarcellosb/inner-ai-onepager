@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { callAIClaude } from '@/lib/ai';
 import { toast } from 'sonner';
 import {
   DndContext,
@@ -363,12 +364,10 @@ export default function PipelinePage() {
     if (!target) return;
     setScoringId(contentId);
     try {
-      const { data, error } = await supabase.functions.invoke('score-content', {
-        body: { text: target.improved_text || target.raw_text, title: target.title, cta: target.cta },
+      const result = await callAIClaude<{ score: ContentScore }>('score-content', {
+        text: target.improved_text || target.raw_text, title: target.title, cta: target.cta,
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setScores(prev => ({ ...prev, [contentId]: data.score as ContentScore }));
+      setScores(prev => ({ ...prev, [contentId]: result.score }));
     } catch (e: any) {
       toast.error(e.message || 'Erro ao avaliar');
     } finally {

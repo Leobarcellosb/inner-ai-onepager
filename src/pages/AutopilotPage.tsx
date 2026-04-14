@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Zap, Loader2, Check, Shield, Pencil, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
+import { callAIClaude } from '@/lib/ai';
 import { ensureScheduledDate, ensureScheduledTime } from '@/lib/pipeline';
 
 interface GeneratedItem {
@@ -46,28 +47,15 @@ export default function AutopilotPage() {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() + 1);
 
-      const { data, error } = await supabase.functions.invoke('autopilot', {
-        body: {
-          count: parseInt(count),
-          start_date: startDate.toISOString().slice(0, 10),
-          auto_approve: false, // Never auto-insert — we review first
-          dry_run: true,
-        },
+      const data = await callAIClaude<any>('autopilot', {
+        type: 'mixed',
+        targetDate: startDate.toISOString().slice(0, 10),
+        context: `Gere ${parseInt(count)} conteúdos variados`,
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
 
-      // If the function inserted (old behavior), show result directly
-      if (data?.created > 0) {
-        queryClient.invalidateQueries({ queryKey: ['contents'] });
-        setSavedCount(data.created);
-        setStep('done');
-        toast.success(`${data.created} conteúdos criados`);
-        return;
-      }
-
-      // New behavior: items returned for review
-      const generated = (data?.items ?? data?.plan ?? []).map((item: Record<string, string>) => ({
+      // Items returned for review
+      const raw = Array.isArray(data) ? data : (data?.items ?? data?.plan ?? []);
+      const generated = raw.map((item: Record<string, string>) => ({
         ...item,
         _selected: true,
         _editing: false,

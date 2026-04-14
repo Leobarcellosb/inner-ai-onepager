@@ -15,6 +15,7 @@ import { ensureScheduledDate, ensureScheduledTime } from '@/lib/pipeline';
 import { format as fmtDate } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PLATFORM_LABELS, FORMAT_LABELS } from '@/types';
+import { callAIClaude } from '@/lib/ai';
 
 const OBJECTIVE_COLORS: Record<string, string> = {
   educar: 'hsl(217 88% 58%)',
@@ -59,18 +60,13 @@ export default function IdeasPage() {
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-ideas', {
-        body: {
-          count: parseInt(count),
-          platform: platform !== 'all' ? platform : undefined,
-          pillar: pillar || undefined,
-          theme: theme || undefined,
-        },
+      const result = await callAIClaude<{ ideas: Idea[] }>('generate-ideas', {
+        topic: theme || pillar || 'conteúdo',
+        count: parseInt(count),
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setIdeas(data.ideas ?? []);
-      toast.success(`${data.ideas?.length ?? 0} ideias geradas!`);
+      const ideas = result.ideas ?? [];
+      setIdeas(ideas);
+      toast.success(`${ideas.length} ideias geradas!`);
     } catch (e: any) {
       toast.error(e.message || 'Erro ao gerar ideias');
     } finally {
@@ -110,18 +106,14 @@ export default function IdeasPage() {
     try {
       const today = new Date();
       const startDate = fmtDate(today, 'yyyy-MM-dd');
-      const { data, error } = await supabase.functions.invoke('plan-calendar', {
-        body: {
-          ideas,
-          start_date: startDate,
-          posts_per_week: parseInt(postsPerWeek),
-          weeks: parseInt(weeks),
-        },
+      const result = await callAIClaude<{ plan: PlannedItem[] }>('plan-calendar', {
+        period: `${parseInt(weeks)} semanas a partir de ${startDate}`,
+        frequency: `${parseInt(postsPerWeek)}x por semana`,
+        goal: 'engajamento',
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setPlan(data.plan ?? []);
-      toast.success(`Calendário com ${data.plan?.length ?? 0} posts planejado!`);
+      const planned = result.plan ?? [];
+      setPlan(planned);
+      toast.success(`Calendário com ${planned.length} posts planejado!`);
     } catch (e: any) {
       toast.error(e.message || 'Erro ao planejar calendário');
     } finally {

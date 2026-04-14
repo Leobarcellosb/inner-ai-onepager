@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { callAIClaude } from '@/lib/ai';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,17 +87,13 @@ export default function KnowledgePage() {
     });
 
     try {
-      const { data, error } = await supabase.functions.invoke('extract-knowledge', {
-        body: payload,
-      });
+      const result = await callAIClaude<{ insights?: string[]; summary?: string; tags?: string[] }>('extract-knowledge', payload);
 
-      console.log('[KNOWLEDGE] Response:', { data, error: error ? { message: error.message, name: error.name, status: (error as any).status } : null });
+      console.log('[KNOWLEDGE] Response:', { result });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
       queryClient.invalidateQueries({ queryKey: ['knowledge'] });
       queryClient.invalidateQueries({ queryKey: ['brain'] });
-      toast.success(`${data.insights?.length ?? 0} insights extraídos e salvos no cérebro`);
+      toast.success(`${result.insights?.length ?? 0} insights extraídos e salvos no cérebro`);
       setRawText(''); setTitle(''); setFileName('');
     } catch (e: any) {
       toast.error(e.message || 'Erro ao processar');

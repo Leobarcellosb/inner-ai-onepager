@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { callAIClaude } from '@/lib/ai';
 import { toast } from 'sonner';
 import { useContents } from '@/hooks/useContents';
 import { AppLayout } from '@/components/AppLayout';
@@ -94,18 +95,14 @@ export default function ApprovalPage() {
   const handleBrainReview = useCallback(async (content: Content) => {
     setReviewingId(content.id);
     try {
-      const { data, error } = await supabase.functions.invoke('brain-review', {
-        body: {
-          text: content.improved_text || content.raw_text,
-          title: content.title,
-          cta: content.cta,
-          platform: content.platform,
-          format: content.format,
-        },
+      const result = await callAIClaude<{ review: { alignment_score: number; verdict: string; strengths: string[]; issues: string[]; suggestions: string[]; summary: string } }>('brain-review', {
+        text: content.improved_text || content.raw_text,
+        title: content.title,
+        cta: content.cta,
+        platform: content.platform,
+        format: content.format,
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setReviews(prev => ({ ...prev, [content.id]: data.review }));
+      setReviews(prev => ({ ...prev, [content.id]: result.review }));
     } catch (e: any) {
       toast.error(e.message || 'Erro na revisão com IA');
     } finally {

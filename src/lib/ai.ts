@@ -26,7 +26,15 @@ export const AI_INTENT_DESCRIPTIONS: Record<AIIntent, string> = {
 };
 
 // ─── HELPER CENTRAL ──────────────────────────────────────
-async function callAIClaude<T>(fn: string, payload: Record<string, unknown>): Promise<T> {
+/**
+ * Calls the unified ai-claude edge function.
+ * Routes through Claude API with Brand Brain context.
+ * Returns parsed JSON directly. Throws on error.
+ */
+export async function callAIClaude<T>(
+  fn: string,
+  payload: Record<string, unknown>,
+): Promise<T> {
   const { data, error } = await supabase.functions.invoke('ai-claude', {
     body: { function: fn, payload },
   });
@@ -34,7 +42,7 @@ async function callAIClaude<T>(fn: string, payload: Record<string, unknown>): Pr
   if (error) throw new Error(error.message || `Erro na função ${fn}`);
   if (data?.error) throw new Error(data.error);
 
-  // result vem como string JSON — parse automático
+  // result comes as JSON string from Claude — auto-parse
   const raw = data.result as string;
   try {
     return JSON.parse(raw) as T;
@@ -49,8 +57,7 @@ export async function improveTextWithAI(
   intent: AIIntent = 'clareza',
   intensity: AIIntensity = 'media'
 ): Promise<string> {
-  const result = await callAIClaude<string>('improve-text', { text, intent, intensity });
-  return result;
+  return callAIClaude<string>('improve-text', { text, intent, intensity });
 }
 
 // ─── GENERATE BRIEF ──────────────────────────────────────

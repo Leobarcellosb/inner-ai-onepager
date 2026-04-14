@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { callAIClaude } from '@/lib/ai';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,13 +69,11 @@ export default function StoriesPage() {
     if (!topic.trim()) { toast.error('Informe o tema dos stories.'); return; }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-stories', {
-        body: { topic, objective, slide_count: parseInt(slideCount), platform },
+      const result = await callAIClaude<{ sequence: StorySequence }>('generate-stories', {
+        topic, objective, slide_count: parseInt(slideCount), platform,
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setSequence(data.sequence as StorySequence);
-      toast.success(`Sequência de ${data.sequence?.total_slides ?? 0} stories gerada!`);
+      setSequence(result.sequence);
+      toast.success(`Sequência de ${result.sequence?.total_slides ?? 0} stories gerada!`);
     } catch (e: any) {
       toast.error(e.message || 'Erro ao gerar stories');
     } finally {

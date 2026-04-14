@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { callAIClaude } from '@/lib/ai';
 import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -112,21 +113,18 @@ export default function ReferenceDetailPage() {
     setAnalyzing(true);
     try {
       await supabase.from('references').update({ analysis_status: 'em_analise' }).eq('id', ref.id);
-      const { data, error } = await supabase.functions.invoke('analyze-reference', {
-        body: {
-          referenceId: ref.id,
-          title: ref.title,
-          platform: ref.platform,
-          format: ref.format,
-          caption: ref.caption_or_observed_copy,
-          hook: ref.observed_hook,
-          imageUrl: ref.reference_image_url,
-          sourceName: ref.source_name,
-        },
+      const result = await callAIClaude<{ analysis: Analysis }>('analyze-reference', {
+        referenceId: ref.id,
+        title: ref.title,
+        platform: ref.platform,
+        format: ref.format,
+        caption: ref.caption_or_observed_copy,
+        hook: ref.observed_hook,
+        imageUrl: ref.reference_image_url,
+        sourceName: ref.source_name,
       });
-      if (error) throw error;
-      if (data?.analysis) {
-        setAnalysis(data.analysis);
+      if (result.analysis) {
+        setAnalysis(result.analysis);
         setRef(prev => prev ? { ...prev, analysis_status: 'analisado' } : null);
         toast.success('Análise concluída!');
       }

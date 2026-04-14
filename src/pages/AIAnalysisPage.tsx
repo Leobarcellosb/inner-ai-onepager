@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { callAIClaude } from '@/lib/ai';
 import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -173,22 +174,19 @@ export default function AIAnalysisPage() {
       setReferenceId(refData.id);
 
       // 3. Invoke AI analysis
-      const { data, error } = await supabase.functions.invoke('analyze-reference', {
-        body: {
-          referenceId: refData.id,
-          title,
-          platform,
-          format: 'post_estatico',
-          caption: extraContext,
-          hook: '',
-          imageUrl,
-          sourceName: '',
-        },
+      const result = await callAIClaude<{ analysis: Analysis }>('analyze-reference', {
+        referenceId: refData.id,
+        title,
+        platform,
+        format: 'post_estatico',
+        caption: extraContext,
+        hook: '',
+        imageUrl,
+        sourceName: '',
       });
 
-      if (error) throw error;
-      if (data?.analysis) {
-        setAnalysis(data.analysis);
+      if (result.analysis) {
+        setAnalysis(result.analysis);
         setStep('done');
         toast.success('Análise concluída!');
       } else {

@@ -20,6 +20,7 @@ import { notifyStatusChange } from '@/lib/notifications';
 import { PipelineBar, getNextTransition, getPrevTransition } from '@/components/PipelineBar';
 import { hasPermission } from '@/lib/permissions';
 import { recordOptimization } from '@/lib/brain-memory';
+import { callAIClaude } from '@/lib/ai';
 import { auditLog } from '@/lib/audit';
 import { validateTransition, getMissingRequirements, getStageGuidance } from '@/lib/pipeline';
 import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS } from '@/types';
@@ -192,17 +193,12 @@ export default function ContentDetailPage() {
     if (!content) return;
     setCarouselLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-carousel', {
-        body: {
-          theme: content.title,
-          base_text: content.improved_text || content.raw_text || '',
-          slide_count: parseInt(carouselSlides),
-          platform: content.platform,
-        },
+      const c = await callAIClaude<any>('generate-carousel', {
+        theme: content.title,
+        base_text: content.improved_text || content.raw_text || '',
+        slide_count: parseInt(carouselSlides),
+        platform: content.platform,
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      const c = data.carousel;
       setCarousel(c);
 
       // Persist carousel to DB
@@ -247,19 +243,9 @@ export default function ContentDetailPage() {
     setOptimizing(true);
     setOptimizeResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('optimize-content', {
-        body: {
-          text: content.improved_text || content.raw_text,
-          title: content.title,
-          cta: content.cta,
-          platform: content.platform,
-          format: content.format,
-        },
+      const r = await callAIClaude<any>('optimize-content', {
+        content: [content.improved_text || content.raw_text, content.title, content.cta].join('\n\n'),
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      const r = data.result;
       setContent(prev => prev ? {
         ...prev,
         improved_text: r.optimized_text || prev.improved_text,
