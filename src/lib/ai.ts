@@ -75,7 +75,10 @@ export async function callAIClaude<T>(fn: string, payload: Record<string, unknow
   if (error) throw new Error(error.message || `Erro na função ${fn}`);
   if (data?.error) throw new Error(data.error);
 
-  const raw = data.result as string;
+  const raw = (data.result as string)
+    .replace(/^```json\n?/i, '')
+    .replace(/\n?```$/i, '')
+    .trim();
   try {
     return JSON.parse(raw) as T;
   } catch {
