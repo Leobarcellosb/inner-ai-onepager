@@ -25,27 +25,35 @@ export const AI_INTENT_DESCRIPTIONS: Record<AIIntent, string> = {
   conversao: 'Otimizado para gerar ação',
 };
 
+// ─── HELPER CENTRAL ──────────────────────────────────────
+async function callAIClaude<T>(fn: string, payload: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.functions.invoke('ai-claude', {
+    body: { function: fn, payload },
+  });
+
+  if (error) throw new Error(error.message || `Erro na função ${fn}`);
+  if (data?.error) throw new Error(data.error);
+
+  // result vem como string JSON — parse automático
+  const raw = data.result as string;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return raw as unknown as T;
+  }
+}
+
+// ─── IMPROVE TEXT ────────────────────────────────────────
 export async function improveTextWithAI(
   text: string,
   intent: AIIntent = 'clareza',
   intensity: AIIntensity = 'media'
 ): Promise<string> {
-  const { data, error } = await supabase.functions.invoke('improve-text', {
-    body: { text, intent, intensity },
-  });
-
-  if (error) {
-    console.error('AI improve error:', error);
-    throw new Error(error.message || 'Erro ao melhorar texto');
-  }
-
-  if (data?.error) {
-    throw new Error(data.error);
-  }
-
-  return data.improved_text;
+  const result = await callAIClaude<string>('improve-text', { text, intent, intensity });
+  return result;
 }
 
+// ─── GENERATE BRIEF ──────────────────────────────────────
 export interface BriefGenerationParams {
   theme: string;
   objective: string;
@@ -71,18 +79,5 @@ export interface BriefGenerationResult {
 }
 
 export async function generateBriefWithAI(params: BriefGenerationParams): Promise<BriefGenerationResult> {
-  const { data, error } = await supabase.functions.invoke('generate-brief', {
-    body: params,
-  });
-
-  if (error) {
-    console.error('AI brief error:', error);
-    throw new Error(error.message || 'Erro ao gerar brief');
-  }
-
-  if (data?.error) {
-    throw new Error(data.error);
-  }
-
-  return data.brief;
+  return callAIClaude<BriefGenerationResult>('generate-brief', params as unknown as Record<string, unknown>);
 }
