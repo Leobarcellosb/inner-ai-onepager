@@ -67,6 +67,7 @@ function parseCSV(text: string): string {
 }
 
 function parseXLSX(buffer: ArrayBuffer): string {
+  if (buffer.byteLength > 5 * 1024 * 1024) throw new Error("Arquivo muito grande. Limite: 5MB");
   const wb = XLSX.read(buffer, { type: 'array' });
   const rows: string[] = [];
   for (const name of wb.SheetNames) {
