@@ -31,10 +31,43 @@ export const AI_INTENT_DESCRIPTIONS: Record<AIIntent, string> = {
  * Routes through Claude API with Brand Brain context.
  * Returns parsed JSON directly. Throws on error.
  */
-export async function callAIClaude<T>(
-  fn: string,
-  payload: Record<string, unknown>,
-): Promise<T> {
+export async function callAIClaude<T>(fn: string, payload: Record<string, unknown>): Promise<T> {
+
+  // Injeta brain automaticamente se não foi passado
+  if (!payload.brain) {
+    const { data: config } = await supabase
+      .from('company_config')
+      .select('*')
+      .single();
+
+    if (config) {
+      const icp = config.icp_json as Record<string, string> | null;
+      const ed = config.editorial_guidelines_json as Record<string, string> | null;
+      const voice = config.voice_tone_json as Record<string, string> | null;
+      const rules = config.rules_json as Record<string, string> | null;
+      const learn = config.learnings_json as Record<string, string[]> | null;
+
+      payload.brain = {
+        identity: {
+          icp: icp?.persona ?? '',
+          positioning: ed?.positioning ?? '',
+          languageStyle: voice?.voice ?? '',
+        },
+        rules: {
+          hardConstraints: [rules?.content_structure, rules?.always_include].filter(Boolean),
+          forbiddenPatterns: [rules?.never_include, voice?.forbidden_terms].filter(Boolean),
+        },
+        validatedPatterns: {
+          hooks: learn?.hooks?.slice(-5) ?? [],
+          copyStructures: learn?.copy_patterns?.slice(-3) ?? [],
+        },
+        memory: {
+          rejectedPatterns: learn?.structures?.slice(-3) ?? [],
+        },
+      };
+    }
+  }
+
   const { data, error } = await supabase.functions.invoke('ai-claude', {
     body: { function: fn, payload },
   });
@@ -42,7 +75,6 @@ export async function callAIClaude<T>(
   if (error) throw new Error(error.message || `Erro na função ${fn}`);
   if (data?.error) throw new Error(data.error);
 
-  // result comes as JSON string from Claude — auto-parse
   const raw = data.result as string;
   try {
     return JSON.parse(raw) as T;
